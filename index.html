@@ -941,7 +941,7 @@ async function predictImage() {
     formData.append("image", fileInput.files[0]);
     elements.loading.classList.remove("d-none");
     try {
-        const response = await fetch("https://food-backend-1oar.onrender.com", {
+        const response = await fetch("https://food-backend-1oar.onrender.com/predict", {
             method: "POST",
             body: formData,
             mode: "cors"
