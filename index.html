@@ -207,7 +207,6 @@
             border: 1px solid var(--border-color);
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             margin: 0 auto;
-            overflow-wrap: break-word;
         }
         .nutrition-group {
             margin-top: 10px;
@@ -231,12 +230,12 @@
             border-bottom: none;
         }
         .nutrition-info .info-item .label {
-            flex: 0 0 40%;
+            flex: 0 0 45%;
             font-weight: 600;
             color: var(--text-color);
         }
         .nutrition-info .info-item .value {
-            flex: 0 0 60%;
+            flex: 1;
             text-align: left;
             color: var(--text-color);
             font-weight: 500;
@@ -247,8 +246,6 @@
             background-color: rgba(255, 99, 132, 0.1);
             padding: 2px 8px;
             border-radius: 5px;
-            max-width: 150px;
-            white-space: normal;
         }
         .nutrition-info .info-item .food-name-bold {
             font-weight: 600;
@@ -353,15 +350,15 @@
             border-radius: 10px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             padding: 4px;
-            gap: 2px;
-            width: 100px;
+            gap: 4px;
+            width: 120px;
         }
         .dark-mode .portion-input-wrapper {
             background-color: #3a3a3c;
             box-shadow: 0 1px 3px rgba(255, 255, 255, 0.1);
         }
         .portion-input {
-            width: 50px;
+            width: 60px;
             padding: 4px 8px;
             border: none;
             background: transparent;
@@ -462,10 +459,10 @@
                 padding: 10px;
             }
             .portion-input-wrapper {
-                width: 90px;
+                width: 100px;
             }
             .portion-input {
-                width: 45px;
+                width: 50px;
             }
             .portion-input-btn {
                 width: 24px;
@@ -624,10 +621,10 @@ let nutritionChart = null;
 let isDeleteMode = false;
 let portionValues = {};
 let currentFacingMode = "environment";
-let isDetecting = false;
+let isDetecting = false; // 控制是否正在辨識
 let detectionInterval = null;
 let stream = null;
-let abortController = null;
+let abortController = null; // 用於管理 fetch 請求
 
 const elements = {
     title: document.getElementById("title"),
@@ -776,7 +773,7 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
         const y = box[1] * scaleY;
         const width = (box[2] - box[0]) * scaleX;
         const height = (box[3] - box[1]) * scaleY;
-        ctx.strokeStyle = "#00FF00"; // 改為綠色框框
+        ctx.strokeStyle = "var(--highlight-color)";
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, width, height);
         const foodName = currentLang === "en" 
@@ -784,9 +781,9 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
             : (d.food_name || d.label);
         const confidence = (d.confidence * 100).toFixed(2);
         ctx.font = "16px Arial";
-        ctx.fillStyle = "rgba(0, 0, 0, 0.7)"; // 文字背景改為半透明黑色
+        ctx.fillStyle = "var(--highlight-color)";
         ctx.fillRect(x, y - 25, ctx.measureText(`${foodName} (${confidence}%)`).width + 10, 20);
-        ctx.fillStyle = "#FFFFFF"; // 文字改為白色
+        ctx.fillStyle = currentTheme === "dark" ? "#ffffff" : "#ffffff";
         ctx.fillText(`${foodName} (${confidence}%)`, x + 5, y - 10);
     });
 }
@@ -889,33 +886,16 @@ function renderChart(detections) {
     }, { calories: 0, protein: 0, total_carbohydrate: 0, total_fat: 0, dietary_fiber: 0 });
 
     const ctx = document.getElementById('nutritionChart')?.getContext('2d');
-    if (!ctx) return;
-
-    const dataValues = [total.calories, total.protein, total.total_carbohydrate, total.total_fat, total.dietary_fiber];
-    if (dataValues.every(val => val === 0)) return;
-
-    if (nutritionChart) {
-        // 更新圖表數據而非重建
-        nutritionChart.data.datasets[0].data = dataValues;
-        nutritionChart.data.labels = [
-            translations[currentLang].calories,
-            translations[currentLang].protein,
-            translations[currentLang].total_carbohydrate,
-            translations[currentLang].total_fat,
-            translations[currentLang].dietary_fiber
-        ];
-        nutritionChart.update();
-    } else {
+    if (ctx) {
+        if (nutritionChart) nutritionChart.destroy();
+        const dataValues = [total.calories, total.protein, total.total_carbohydrate, total.total_fat, total.dietary_fiber];
+        if (dataValues.every(val => val === 0)) return;
         nutritionChart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: [
-                    translations[currentLang].calories,
-                    translations[currentLang].protein,
-                    translations[currentLang].total_carbohydrate,
-                    translations[currentLang].total_fat,
-                    translations[currentLang].dietary_fiber
-                ],
+                labels: [translations[currentLang].calories, translations[currentLang].protein, 
+                         translations[currentLang].total_carbohydrate, translations[currentLang].total_fat, 
+                         translations[currentLang].dietary_fiber],
                 datasets: [{
                     data: dataValues,
                     backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
@@ -1035,27 +1015,16 @@ async function predictImage() {
     }
 }
 
-function updateHistoryUI(query = '') {
-    const filteredRecords = query
-        ? historyRecords.filter(record => 
-            record.detections.some(d => 
-                (currentLang === "en" ? (d.label || d.food_name) : (d.food_name || d.label)).toLowerCase().includes(query.toLowerCase())
-            )
-        )
-        : historyRecords;
-
-    elements.historyArea.innerHTML = filteredRecords.map((record, index) => {
-        const originalIndex = historyRecords.indexOf(record);
-        return `
-            <div class="history-item ${isDeleteMode ? 'delete-mode' : ''}" data-index="${originalIndex}">
-                <input type="checkbox" class="history-checkbox" data-index="${originalIndex}">
-                <span>
-                    <span class="food-name">${record.detections.map(d => currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : (d.food_name || d.label)).join(', ')}</span>
-                    <span class="timestamp"> - ${record.timestamp}</span>
-                </span>
-            </div>
-        `;
-    }).join('');
+function updateHistoryUI() {
+    elements.historyArea.innerHTML = historyRecords.map((record, index) => `
+        <div class="history-item ${isDeleteMode ? 'delete-mode' : ''}" data-index="${index}">
+            <input type="checkbox" class="history-checkbox" data-index="${index}">
+            <span>
+                <span class="food-name">${record.detections.map(d => currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : (d.food_name || d.label)).join(', ')}</span>
+                <span class="timestamp"> - ${record.timestamp}</span>
+            </span>
+        </div>
+    `).join('');
 }
 
 function showHistoryDetail(index) {
@@ -1079,6 +1048,27 @@ function showHistoryDetail(index) {
     };
     elements.resultArea.dataset.detections = JSON.stringify(record);
     renderChart(record.detections);
+}
+
+function filterHistory() {
+    const query = elements.historySearch.value.toLowerCase();
+    const filtered = historyRecords.filter(record => 
+        record.detections.some(d => 
+            (currentLang === "en" ? (d.label || d.food_name) : (d.food_name || d.label)).toLowerCase().includes(query)
+        )
+    );
+    elements.historyArea.innerHTML = filtered.map(record => {
+        const originalIndex = historyRecords.indexOf(record);
+        return `
+            <div class="history-item ${isDeleteMode ? 'delete-mode' : ''}" data-index="${originalIndex}">
+                <input type="checkbox" class="history-checkbox" data-index="${originalIndex}">
+                <span>
+                    <span class="food-name">${record.detections.map(d => currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : (d.food_name || d.label)).join(', ')}</span>
+                    <span class="timestamp"> - ${record.timestamp}</span>
+                </span>
+            </div>
+        `;
+    }).join('');
 }
 
 function toggleCheckbox(event, index) {
@@ -1125,7 +1115,7 @@ elements.confirmDelete.addEventListener("click", confirmDelete);
 elements.selectAll.addEventListener("click", () => {
     document.querySelectorAll('.history-checkbox').forEach(checkbox => checkbox.checked = true);
 });
-elements.historySearch.addEventListener("keyup", () => updateHistoryUI(elements.historySearch.value));
+elements.historySearch.addEventListener("keyup", filterHistory);
 elements.historyArea.addEventListener("click", (e) => {
     const item = e.target.closest(".history-item");
     if (item) toggleCheckbox(e, parseInt(item.dataset.index));
@@ -1335,6 +1325,5 @@ document.addEventListener("keydown", (e) => {
 });
 </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925f36a0eacd4575',t:'MTc0MjkxNDE1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925f66b3ae81d9f1',t:'MTc0MjkxNjExOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
