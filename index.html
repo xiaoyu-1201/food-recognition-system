@@ -55,7 +55,7 @@
             font-weight: 600;
             color: var(--text-color);
             margin: 0;
-            white-space: nowrap; /* 防止標題換行 */
+            white-space: nowrap;
         }
         .header-buttons {
             display: flex;
@@ -195,18 +195,18 @@
             justify-content: center;
             padding: var(--padding);
             width: 100%;
-            text-align: center; /* 確保內容居中 */
-            margin: 0 auto; /* 居中對齊 */
+            text-align: center;
+            margin: 0 auto;
         }
         .nutrition-info {
             width: 100%;
-            max-width: 600px; /* 限制寬度以避免偏右 */
+            max-width: 600px;
             padding: 20px;
             background-color: var(--hover-bg);
             border-radius: var(--border-radius);
             border: 1px solid var(--border-color);
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-            margin: 0 auto; /* 居中對齊 */
+            margin: 0 auto;
         }
         .nutrition-group {
             margin-top: 10px;
@@ -435,7 +435,7 @@
                 font-size: 12px;
             }
             h2 {
-                font-size: 24px; /* 小螢幕減小標題字體 */
+                font-size: 24px;
             }
             .nutrition-info {
                 padding: 15px;
@@ -574,7 +574,8 @@ const translations = {
         "nutritionInfo": "營養成分",
         "otherInfo": "其他資訊",
         "toggleCameraFront": "切換至前鏡頭",
-        "toggleCameraBack": "切換至後鏡頭"
+        "toggleCameraBack": "切換至後鏡頭",
+        "requestAborted": "請求已中止，請重新嘗試"
     },
     "en": {
         "title": "🍱 YOLOv8 Food Recognition System 🍜",
@@ -608,7 +609,8 @@ const translations = {
         "nutritionInfo": "Nutrition Info",
         "otherInfo": "Other Info",
         "toggleCameraFront": "Switch to Front Camera",
-        "toggleCameraBack": "Switch to Back Camera"
+        "toggleCameraBack": "Switch to Back Camera",
+        "requestAborted": "Request aborted, please try again"
     }
 };
 
@@ -618,7 +620,11 @@ let historyRecords = JSON.parse(localStorage.getItem('foodHistory')) || [];
 let nutritionChart = null;
 let isDeleteMode = false;
 let portionValues = {};
-let currentFacingMode = "environment"; // 預設後鏡頭
+let currentFacingMode = "environment";
+let isDetecting = false; // 控制是否正在辨識
+let detectionInterval = null;
+let stream = null;
+let abortController = null; // 用於管理 fetch 請求
 
 const elements = {
     title: document.getElementById("title"),
@@ -965,7 +971,7 @@ async function predictImage() {
             method: "POST",
             body: formData,
             mode: "cors",
-            signal: AbortSignal.timeout(10000) // 設置 10 秒超時
+            signal: AbortSignal.timeout(10000)
         });
         if (!response.ok) throw new Error(`伺服器錯誤：${response.statusText}`);
         const data = await response.json();
@@ -1117,10 +1123,8 @@ elements.historyArea.addEventListener("click", (e) => {
 
 document.getElementById("file").addEventListener("change", previewFile);
 
-let stream = null;
 let canvas = document.createElement("canvas");
 let overlayCtx = elements.overlayCanvas.getContext("2d");
-let detectionInterval = null;
 let lastDetections = null;
 let lastRecordTime = 0;
 const MIN_RECORD_INTERVAL = 5000;
@@ -1156,7 +1160,13 @@ async function startCamera() {
 }
 
 function startDetection() {
+    isDetecting = true;
     detectionInterval = setInterval(async () => {
+        if (!isDetecting) {
+            clearInterval(detectionInterval);
+            return;
+        }
+
         canvas.getContext("2d").drawImage(elements.videoStream, 0, 0, canvas.width, canvas.height);
         const imageDataUrl = canvas.toDataURL("image/jpeg");
         const blob = await (await fetch(imageDataUrl)).blob();
@@ -1164,7 +1174,7 @@ function startDetection() {
         formData.append("image", blob, "frame.jpg");
         elements.loading.classList.remove("d-none");
 
-        // 設置超時機制
+        abortController = new AbortController();
         const timeoutPromise = new Promise((resolve, reject) => {
             setTimeout(() => reject(new Error("請求超時，請檢查網路或伺服器狀態")), 10000);
         });
@@ -1174,7 +1184,8 @@ function startDetection() {
                 fetch("https://food-backend-1oar.onrender.com/predict", {
                     method: "POST",
                     body: formData,
-                    mode: "cors"
+                    mode: "cors",
+                    signal: abortController.signal
                 }),
                 timeoutPromise
             ]);
@@ -1217,6 +1228,7 @@ function startDetection() {
                 updateHistoryUI();
                 lastDetections = data.detections;
                 lastRecordTime = currentTime;
+                isDetecting = false;
                 clearInterval(detectionInterval);
                 elements.restartStreamBtn.classList.remove("d-none");
                 elements.videoStream.style.display = "none";
@@ -1241,13 +1253,17 @@ function startDetection() {
                 setTimeout(drawOnPreview, 2000);
             }
         } catch (err) {
-            const errorMsg = err.message.includes("Not Found") 
-                ? "後端服務未找到，請確認 https://food-backend-1oar.onrender.com/predict 是否正常運行" 
-                : err.message;
-            elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：${errorMsg}</div>`;
+            if (err.name === "AbortError") {
+                elements.resultArea.innerHTML = `<div class="alert alert-warning">${translations[currentLang].requestAborted}</div>`;
+            } else if (err.message.includes("Not Found")) {
+                elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：後端服務未找到，請確認 https://food-backend-1oar.onrender.com/predict 是否正常運行</div>`;
+            } else {
+                elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：${err.message}</div>`;
+            }
             console.error("錯誤:", err);
         } finally {
             elements.loading.classList.add("d-none");
+            abortController = null;
         }
     }, 500);
 }
@@ -1264,6 +1280,10 @@ elements.toggleCameraBtn.addEventListener("click", () => {
 });
 
 elements.restartStreamBtn.addEventListener("click", () => {
+    if (abortController) {
+        abortController.abort();
+        abortController = null;
+    }
     elements.videoStream.style.display = "block";
     elements.previewImg.style.display = "none";
     elements.previewOverlayCanvas.getContext("2d").clearRect(0, 0, elements.previewOverlayCanvas.width, elements.previewOverlayCanvas.height);
@@ -1276,6 +1296,11 @@ elements.stopStreamBtn.addEventListener("click", () => {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
         elements.videoStream.srcObject = null;
+        isDetecting = false;
+        if (abortController) {
+            abortController.abort();
+            abortController = null;
+        }
         clearInterval(detectionInterval);
         overlayCtx.clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
         elements.previewOverlayCanvas.getContext("2d").clearRect(0, 0, elements.previewOverlayCanvas.width, elements.previewOverlayCanvas.height);
