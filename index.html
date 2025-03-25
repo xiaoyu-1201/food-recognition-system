@@ -174,7 +174,7 @@
             justify-content: center;
             min-height: 400px;
             padding: var(--padding);
-            overflow: visible;
+            overflow: hidden;
             position: relative;
         }
         #previewImg:empty::before {
@@ -189,14 +189,13 @@
         #resultArea {
             flex: 1;
             min-width: 400px;
-            max-width: 700px;
+            max-width: 600px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             padding: var(--padding);
-            width: 100%;
-            text-align: center;
             margin: 0 auto;
+            text-align: center;
         }
         .nutrition-info {
             width: 100%;
@@ -230,15 +229,18 @@
             border-bottom: none;
         }
         .nutrition-info .info-item .label {
-            flex: 0 0 45%;
+            flex: 0 0 40%;
             font-weight: 600;
             color: var(--text-color);
+            text-align: left;
         }
         .nutrition-info .info-item .value {
-            flex: 1;
+            flex: 0 0 60%;
             text-align: left;
             color: var(--text-color);
             font-weight: 500;
+            display: flex;
+            align-items: center;
         }
         .nutrition-info .info-item .value[for="calories"] {
             font-weight: 600;
@@ -246,6 +248,7 @@
             background-color: rgba(255, 99, 132, 0.1);
             padding: 2px 8px;
             border-radius: 5px;
+            max-width: 150px;
         }
         .nutrition-info .info-item .food-name-bold {
             font-weight: 600;
@@ -352,6 +355,7 @@
             padding: 4px;
             gap: 4px;
             width: 120px;
+            max-width: 120px;
         }
         .dark-mode .portion-input-wrapper {
             background-color: #3a3a3c;
@@ -621,10 +625,10 @@ let nutritionChart = null;
 let isDeleteMode = false;
 let portionValues = {};
 let currentFacingMode = "environment";
-let isDetecting = false; // 控制是否正在辨識
+let isDetecting = false;
 let detectionInterval = null;
 let stream = null;
-let abortController = null; // 用於管理 fetch 請求
+let abortController = null;
 
 const elements = {
     title: document.getElementById("title"),
@@ -826,35 +830,35 @@ function renderDetection(detection, multiplier = 1) {
         </div>
         <div class="info-item">
             <span class="label">${t.serving_size}</span>
-            <span class="value">${values.serving_size}${values.serving_size !== "N/A" ? "" : ""}<span class="unit-text">${values.serving_size !== "N/A" ? " g" : ""}</span></span>
+            <span class="value">${values.serving_size}<span class="unit-text">${values.serving_size !== "N/A" ? " g" : ""}</span></span>
         </div>
 
         <div class="nutrition-group">${t.nutritionInfo}</div>
         <div class="info-item">
             <span class="label">${t.calories}</span>
-            <span class="value" for="calories">${values.calories}${values.calories !== "N/A" ? "" : ""}<span class="unit-text">${values.calories !== "N/A" ? " kcal" : ""}</span></span>
+            <span class="value" for="calories">${values.calories}<span class="unit-text">${values.calories !== "N/A" ? " kcal" : ""}</span></span>
         </div>
         <div class="info-item">
             <span class="label">${t.protein}</span>
-            <span class="value">${values.protein}${values.protein !== "N/A" ? "" : ""}<span class="unit-text">${values.protein !== "N/A" ? " g" : ""}</span></span>
+            <span class="value">${values.protein}<span class="unit-text">${values.protein !== "N/A" ? " g" : ""}</span></span>
         </div>
         <div class="info-item">
             <span class="label">${t.total_carbohydrate}</span>
-            <span class="value">${values.total_carbohydrate}${values.total_carbohydrate !== "N/A" ? "" : ""}<span class="unit-text">${values.total_carbohydrate !== "N/A" ? " g" : ""}</span></span>
+            <span class="value">${values.total_carbohydrate}<span class="unit-text">${values.total_carbohydrate !== "N/A" ? " g" : ""}</span></span>
         </div>
         <div class="info-item">
             <span class="label">${t.total_fat}</span>
-            <span class="value">${values.total_fat}${values.total_fat !== "N/A" ? "" : ""}<span class="unit-text">${values.total_fat !== "N/A" ? " g" : ""}</span></span>
+            <span class="value">${values.total_fat}<span class="unit-text">${values.total_fat !== "N/A" ? " g" : ""}</span></span>
         </div>
         <div class="info-item">
             <span class="label">${t.dietary_fiber}</span>
-            <span class="value">${values.dietary_fiber}${values.dietary_fiber !== "N/A" ? "" : ""}<span class="unit-text">${values.dietary_fiber !== "N/A" ? " g" : ""}</span></span>
+            <span class="value">${values.dietary_fiber}<span class="unit-text">${values.dietary_fiber !== "N/A" ? " g" : ""}</span></span>
         </div>
 
         <div class="nutrition-group">${t.otherInfo}</div>
         <div class="info-item">
             <span class="label">${t.price}</span>
-            <span class="value">${values.price}${values.price !== "N/A" ? "" : ""}<span class="unit-text">${values.price !== "N/A" ? " " + priceUnit : ""}</span></span>
+            <span class="value">${values.price}<span class="unit-text">${values.price !== "N/A" ? " " + priceUnit : ""}</span></span>
         </div>
         <div class="info-item">
             <span class="label">${t.confidence}</span>
@@ -1159,7 +1163,8 @@ async function startCamera() {
     }
 }
 
-function startDetection() {
+async function startDetection() {
+    if (isDetecting) return;
     isDetecting = true;
     detectionInterval = setInterval(async () => {
         if (!isDetecting) {
@@ -1175,24 +1180,14 @@ function startDetection() {
         elements.loading.classList.remove("d-none");
 
         abortController = new AbortController();
-        const timeoutPromise = new Promise((resolve, reject) => {
-            setTimeout(() => reject(new Error("請求超時，請檢查網路或伺服器狀態")), 10000);
-        });
-
         try {
-            const response = await Promise.race([
-                fetch("https://food-backend-1oar.onrender.com/predict", {
-                    method: "POST",
-                    body: formData,
-                    mode: "cors",
-                    signal: abortController.signal
-                }),
-                timeoutPromise
-            ]);
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`伺服器錯誤：${errorText}`);
-            }
+            const response = await fetch("https://food-backend-1oar.onrender.com/predict", {
+                method: "POST",
+                body: formData,
+                mode: "cors",
+                signal: abortController.signal
+            });
+            if (!response.ok) throw new Error(`伺服器錯誤：${await response.text()}`);
             const data = await response.json();
             if (!data.detections || data.detections.length === 0) {
                 elements.resultArea.innerHTML = `<div class="alert alert-warning">${translations[currentLang].noFood}</div>`;
@@ -1200,6 +1195,7 @@ function startDetection() {
                 lastDetections = null;
                 return;
             }
+            drawBoundingBoxes(data.detections, elements.overlayCanvas, elements.videoStream, canvas);
             const detectionsHtml = data.detections.map(d => renderDetection(d)).join('');
             elements.resultArea.innerHTML = `
                 <div class="nutrition-info">
@@ -1211,8 +1207,6 @@ function startDetection() {
             `;
             elements.resultArea.dataset.detections = JSON.stringify(data);
             renderChart(data.detections);
-            overlayCtx.clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
-            drawBoundingBoxes(data.detections, elements.overlayCanvas, elements.videoStream);
             const currentTime = Date.now();
             const currentDetections = data.detections.map(d => d.food_name || d.label).sort().join(',');
             const lastDetectionsStr = lastDetections ? lastDetections.map(d => d.food_name || d.label).sort().join(',') : '';
@@ -1234,29 +1228,15 @@ function startDetection() {
                 elements.videoStream.style.display = "none";
                 elements.previewImg.src = imageDataUrl;
                 elements.previewImg.style.display = "block";
-                const drawOnPreview = () => {
-                    if (!elements.previewImg.naturalWidth || !elements.previewImg.naturalHeight) {
-                        console.log("圖片尺寸未載入，重試中...");
-                        setTimeout(drawOnPreview, 100);
-                        return;
-                    }
+                elements.previewImg.onload = () => {
                     elements.previewOverlayCanvas.width = elements.previewImg.offsetWidth;
                     elements.previewOverlayCanvas.height = elements.previewImg.offsetHeight;
                     drawBoundingBoxes(data.detections, elements.previewOverlayCanvas, elements.previewImg, canvas);
-                    console.log("框框與文字繪製完成");
                 };
-                if (elements.previewImg.complete) {
-                    drawOnPreview();
-                } else {
-                    elements.previewImg.onload = drawOnPreview;
-                }
-                setTimeout(drawOnPreview, 2000);
             }
         } catch (err) {
             if (err.name === "AbortError") {
                 elements.resultArea.innerHTML = `<div class="alert alert-warning">${translations[currentLang].requestAborted}</div>`;
-            } else if (err.message.includes("Not Found")) {
-                elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：後端服務未找到，請確認 https://food-backend-1oar.onrender.com/predict 是否正常運行</div>`;
             } else {
                 elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：${err.message}</div>`;
             }
@@ -1265,7 +1245,7 @@ function startDetection() {
             elements.loading.classList.add("d-none");
             abortController = null;
         }
-    }, 500);
+    }, 1000); // 調整為每秒偵測一次
 }
 
 elements.startStreamBtn.addEventListener("click", startCamera);
@@ -1287,6 +1267,8 @@ elements.restartStreamBtn.addEventListener("click", () => {
     elements.videoStream.style.display = "block";
     elements.previewImg.style.display = "none";
     elements.previewOverlayCanvas.getContext("2d").clearRect(0, 0, elements.previewOverlayCanvas.width, elements.previewOverlayCanvas.height);
+    isDetecting = false;
+    clearInterval(detectionInterval);
     startDetection();
     elements.restartStreamBtn.classList.add("d-none");
 });
@@ -1324,6 +1306,5 @@ document.addEventListener("keydown", (e) => {
     }
 });
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925f36a0eacd4575',t:'MTc0MjkxNDE1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
