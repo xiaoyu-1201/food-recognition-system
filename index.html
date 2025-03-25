@@ -157,6 +157,7 @@
             border: none;
             background-color: var(--card-bg);
             padding: var(--padding);
+            overflow: hidden; /* 修復：防止內容超出白色底框 */
         }
         #mainContent {
             display: flex;
@@ -168,7 +169,7 @@
         #imageArea {
             flex: 1;
             min-width: 400px;
-            max-width: 600px;
+            max-width: 100%; /* 修復：限制圖片區域寬度 */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -186,10 +187,17 @@
             transform: translate(-50%, -50%);
             font-size: 16px;
         }
+        #previewImg {
+            max-width: 100%; /* 修復：確保圖片不超出父容器 */
+            height: auto;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto; /* 修復：圖片居中 */
+        }
         #resultArea {
             flex: 1;
             min-width: 400px;
-            max-width: 600px;
+            max-width: 100%; /* 修復：限制結果區域寬度 */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -199,7 +207,7 @@
         }
         .nutrition-info {
             width: 100%;
-            max-width: 600px;
+            max-width: 100%; /* 修復：適應父容器寬度 */
             padding: 20px;
             background-color: var(--hover-bg);
             border-radius: var(--border-radius);
@@ -233,6 +241,7 @@
             font-weight: 600;
             color: var(--text-color);
             text-align: left;
+            display: inline-block; /* 修復：確保文字對齊 */
         }
         .nutrition-info .info-item .value {
             flex: 0 0 60%;
@@ -241,6 +250,7 @@
             font-weight: 500;
             display: flex;
             align-items: center;
+            justify-content: flex-start; /* 修復：確保值與標籤對齊 */
         }
         .nutrition-info .info-item .value[for="calories"] {
             font-weight: 600;
@@ -248,7 +258,7 @@
             background-color: rgba(255, 99, 132, 0.1);
             padding: 2px 8px;
             border-radius: 5px;
-            max-width: 150px;
+            max-width: fit-content; /* 修復：粉紅色框框根據內容調整 */
         }
         .nutrition-info .info-item .food-name-bold {
             font-weight: 600;
@@ -354,15 +364,15 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             padding: 4px;
             gap: 4px;
-            width: 120px;
-            max-width: 120px;
+            width: auto; /* 修復：自適應寬度 */
+            max-width: 100px; /* 修復：限制最大寬度 */
         }
         .dark-mode .portion-input-wrapper {
             background-color: #3a3a3c;
             box-shadow: 0 1px 3px rgba(255, 255, 255, 0.1);
         }
         .portion-input {
-            width: 60px;
+            width: 50px; /* 修復：縮小輸入框寬度 */
             padding: 4px 8px;
             border: none;
             background: transparent;
@@ -463,10 +473,11 @@
                 padding: 10px;
             }
             .portion-input-wrapper {
-                width: 100px;
+                width: auto; /* 修復：自適應寬度 */
+                max-width: 80px; /* 修復：小螢幕下限制寬度 */
             }
             .portion-input {
-                width: 50px;
+                width: 40px; /* 修復：小螢幕下縮小輸入框 */
             }
             .portion-input-btn {
                 width: 24px;
@@ -777,7 +788,7 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
         const y = box[1] * scaleY;
         const width = (box[2] - box[0]) * scaleX;
         const height = (box[3] - box[1]) * scaleY;
-        ctx.strokeStyle = "var(--highlight-color)";
+        ctx.strokeStyle = "#00FF00"; /* 修復：改為綠色框框 */
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, width, height);
         const foodName = currentLang === "en" 
@@ -785,9 +796,9 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
             : (d.food_name || d.label);
         const confidence = (d.confidence * 100).toFixed(2);
         ctx.font = "16px Arial";
-        ctx.fillStyle = "var(--highlight-color)";
+        ctx.fillStyle = "#00FF00"; /* 修復：改為綠色背景 */
         ctx.fillRect(x, y - 25, ctx.measureText(`${foodName} (${confidence}%)`).width + 10, 20);
-        ctx.fillStyle = currentTheme === "dark" ? "#ffffff" : "#ffffff";
+        ctx.fillStyle = "#ffffff"; /* 修復：白色文字 */
         ctx.fillText(`${foodName} (${confidence}%)`, x + 5, y - 10);
     });
 }
@@ -1245,7 +1256,7 @@ async function startDetection() {
             elements.loading.classList.add("d-none");
             abortController = null;
         }
-    }, 1000); // 調整為每秒偵測一次
+    }, 1000);
 }
 
 elements.startStreamBtn.addEventListener("click", startCamera);
@@ -1306,5 +1317,5 @@ document.addEventListener("keydown", (e) => {
     }
 });
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925f9a009b2f4594',t:'MTc0MjkxODIyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
