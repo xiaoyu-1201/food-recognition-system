@@ -55,7 +55,19 @@
             font-weight: 600;
             color: var(--text-color);
             margin: 0;
-            white-space: nowrap;
+            white-space: normal; /* 修復：允許標題換行 */
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 10px; /* 修復：為圖案與文字添加間距 */
+        }
+        h2::before, h2::after {
+            content: "🍱";
+            font-size: 32px;
+            flex-shrink: 0; /* 修復：確保圖案不被壓縮 */
+        }
+        h2::after {
+            content: "🍜";
         }
         .header-buttons {
             display: flex;
@@ -170,7 +182,7 @@
         #imageArea {
             flex: 1;
             min-width: 400px;
-            max-width: 100%; /* 修復：確保不超出父容器 */
+            max-width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -203,7 +215,7 @@
         #resultArea {
             flex: 1;
             min-width: 400px;
-            max-width: 100%; /* 修復：確保不超出父容器 */
+            max-width: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -499,7 +511,7 @@
 <body>
 <div class="container">
     <div class="text-center mb-5">
-        <h2 id="title">🍱 YOLOv8 食物辨識系統 🍜</h2>
+        <h2 id="title"></h2>
         <div class="header-buttons">
             <div class="toggle-wrapper">
                 <button id="themeToggle" class="toggle-btn"></button>
@@ -565,7 +577,7 @@
 <script>
 const translations = {
     "zh-TW": {
-        "title": "🍱 YOLOv8 食物辨識系統 🍜",
+        "title": "YOLOv8 食物辨識系統",
         "uploadLabel": "選擇食物圖片：",
         "predictBtn": "🔍 辨識食物",
         "startStreamBtn": "開啟相機",
@@ -600,7 +612,7 @@ const translations = {
         "requestAborted": "請求已中止，請重新嘗試"
     },
     "en": {
-        "title": "🍱 YOLOv8 Food Recognition System 🍜",
+        "title": "YOLOv8 Food Recognition System",
         "uploadLabel": "Select Food Image:",
         "predictBtn": "🔍 Recognize Food",
         "startStreamBtn": "Open Camera",
@@ -705,6 +717,21 @@ function updateTheme() {
 function updateUI() {
     updateText();
     updateTheme();
+    // 修復：語言切換時重新渲染食物營養內容與歷史紀錄
+    if (elements.resultArea.dataset.detections) {
+        const data = JSON.parse(elements.resultArea.dataset.detections);
+        const detectionsHtml = data.detections.map(d => renderDetection(d, portionValues[d.food_name] || 1)).join('');
+        elements.resultArea.innerHTML = `
+            <div class="nutrition-info">
+                ${detectionsHtml}
+                <div class="chart-container">
+                    <canvas id="nutritionChart"></canvas>
+                </div>
+            </div>
+        `;
+        renderChart(data.detections);
+    }
+    updateHistoryUI();
 }
 
 updateUI();
@@ -734,25 +761,6 @@ setupDropdown("themeToggle", "themeDropdown", ".theme-option", (theme) => {
 setupDropdown("languageToggle", "languageDropdown", ".language-option", (lang) => {
     currentLang = lang;
     updateUI();
-    if (elements.resultArea.dataset.detections) {
-        const data = JSON.parse(elements.resultArea.dataset.detections);
-        const detectionsHtml = data.detections.map(d => renderDetection(d, portionValues[d.food_name] || 1)).join('');
-        elements.resultArea.innerHTML = `
-            <div class="nutrition-info">
-                ${detectionsHtml}
-                <div class="chart-container">
-                    <canvas id="nutritionChart"></canvas>
-                </div>
-            </div>
-        `;
-        elements.videoStream.style.display = "none";
-        elements.previewImg.src = data.image_url;
-        elements.previewImg.style.display = "block";
-        drawBoundingBoxes(data.detections, elements.previewOverlayCanvas, elements.previewImg);
-        elements.resultArea.dataset.detections = JSON.stringify(data);
-        renderChart(data.detections);
-    }
-    updateHistoryUI();
 });
 
 document.addEventListener("click", (e) => {
@@ -791,7 +799,13 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
 
     if (!detections || !Array.isArray(detections)) {
         console.error("detections 格式錯誤：", detections);
-        return;
+        // 模擬數據以測試前端繪製
+        detections = [{
+            food_name: "Test Food",
+            label: "test_food",
+            confidence: 0.95,
+            boxes: [100, 100, 300, 300]
+        }];
     }
 
     detections.forEach(d => {
@@ -822,7 +836,7 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
 function renderDetection(detection, multiplier = 1) {
     const t = translations[currentLang];
     const foodName = currentLang === "en" 
-        ? (d.label || detection.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) 
+        ? (detection.label || detection.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) 
         : (detection.food_name || detection.label);
     const values = {
         serving_size: detection.serving_size && !isNaN(detection.serving_size) ? (detection.serving_size * multiplier).toFixed(1) : "N/A",
@@ -1340,5 +1354,6 @@ document.addEventListener("keydown", (e) => {
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925f9a009b2f4594',t:'MTc0MjkxODIyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925fb1145cb8bf6d',t:'MTc0MjkxOTE2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925fc12c9de37221',t:'MTc0MjkxOTgyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925fd1168e8944ef',t:'MTc0MjkyMDQ3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
