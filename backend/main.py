@@ -34,7 +34,8 @@ db_config = {
     "user": os.getenv("MYSQL_USER", "4LbqsBXa8zkncXb.root"),
     "password": os.getenv("MYSQL_PASSWORD", "TdVb2lyWfM1TUuw8"),
     "database": os.getenv("MYSQL_DATABASE", "food_recognition"),
-    "ssl": True
+    "ssl_mode": "VERIFY_IDENTITY",  # 啟用 SSL 並驗證證書
+    "use_ssl": True  # 確保使用 SSL
 }
 
 def connect_db():
