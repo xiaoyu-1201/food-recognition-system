@@ -156,9 +156,9 @@
             box-shadow: var(--shadow);
             border: none;
             background-color: var(--card-bg);
-            padding: 15px; /* 修復：減少內邊距，避免內容超出 */
+            padding: 15px;
             overflow: hidden;
-            box-sizing: border-box; /* 修復：確保內邊距不影響寬度 */
+            box-sizing: border-box;
         }
         #mainContent {
             display: flex;
@@ -170,12 +170,12 @@
         #imageArea {
             flex: 1;
             min-width: 400px;
-            max-width: calc(100% - 30px); /* 修復：考慮內邊距 */
+            max-width: 100%; /* 修復：確保不超出父容器 */
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 400px;
-            padding: 0; /* 修復：移除內邊距 */
+            padding: 0;
             overflow: hidden;
             position: relative;
         }
@@ -196,18 +196,18 @@
             margin: 0 auto;
         }
         #videoStream {
-            max-width: 100%; /* 修復：確保視頻不超出 */
+            max-width: 100%;
             height: auto;
             border-radius: 10px;
         }
         #resultArea {
             flex: 1;
             min-width: 400px;
-            max-width: calc(100% - 30px); /* 修復：考慮內邊距 */
+            max-width: 100%; /* 修復：確保不超出父容器 */
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 0; /* 修復：移除內邊距 */
+            padding: 0;
             margin: 0 auto;
             text-align: center;
         }
@@ -220,7 +220,7 @@
             border: 1px solid var(--border-color);
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             margin: 0 auto;
-            box-sizing: border-box; /* 修復：確保內邊距不影響寬度 */
+            box-sizing: border-box;
         }
         .nutrition-group {
             margin-top: 10px;
@@ -789,7 +789,16 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
     const scaleX = canvasWidth / targetWidth;
     const scaleY = canvasHeight / targetHeight;
 
+    if (!detections || !Array.isArray(detections)) {
+        console.error("detections 格式錯誤：", detections);
+        return;
+    }
+
     detections.forEach(d => {
+        if (!d.boxes || !Array.isArray(d.boxes) || d.boxes.length !== 4) {
+            console.error("boxes 格式錯誤：", d.boxes);
+            return;
+        }
         const box = d.boxes;
         const x = box[0] * scaleX;
         const y = box[1] * scaleY;
@@ -856,7 +865,9 @@ function renderDetection(detection, multiplier = 1) {
         <div class="nutrition-group">${t.nutritionInfo}</div>
         <div class="info-item">
             <span class="label">${t.calories}</span>
-            <span class="value" for="calories">${values.calories}<span class="unit-text">${values.calories !== "N/A" ? " kcal" : ""}</span></span>
+            <span class="value">
+                <span class="calories-wrapper" for="calories">${values.calories}<span class="unit-text">${values.calories !== "N/A" ? " kcal" : ""}</span></span>
+            </span>
         </div>
         <div class="info-item">
             <span class="label">${t.protein}</span>
@@ -1328,5 +1339,6 @@ document.addEventListener("keydown", (e) => {
 </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925f9a009b2f4594',t:'MTc0MjkxODIyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925fb1145cb8bf6d',t:'MTc0MjkxOTE2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925fc12c9de37221',t:'MTc0MjkxOTgyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
