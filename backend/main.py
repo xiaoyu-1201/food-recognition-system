@@ -30,10 +30,14 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 model = YOLO("food_yolov8_multi_GoogleColab.pt")
 
 db_config = {
-    "host": "localhost",
-    "user": "root",
-    "password": "0000",
-    "database": "food_recognition"
+    "host" = "gateway01.us-east-1.prod.aws.tidbcloud.com",
+    "port" = 4000,
+    "user" = "4LbqsBXa8zkncXb.root",
+    "password" = "TdVb2lyWfM1TUuw8",
+    "database" = "food_recognition",
+    "ssl_ca" = "/etc/ssl/cert.pem",
+    "ssl_verify_cert" = True,
+  "ssl_verify_identity" = True
 }
 
 def connect_db():
