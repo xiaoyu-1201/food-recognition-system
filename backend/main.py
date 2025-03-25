@@ -24,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = "/opt/render/project/uploads"  # Render 臨時儲存路徑os.makedirs(UPLOAD_DIR, exist_ok=True)
+UPLOAD_DIR = "/tmp/uploads"  # Render 臨時儲存路徑os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 model = YOLO("food_yolov8_multi_GoogleColab.pt")
