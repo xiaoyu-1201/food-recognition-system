@@ -55,7 +55,7 @@ async def predict_food(image: UploadFile = File(...)):
         # 動態掛載（僅第一次執行）
         if "/uploads" not in [route.path for route in app.routes]:
             app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-            logger.info(f"Mounted /uploads to {UPLOAD_DIR}"
+            logger.info(f"Mounted /uploads to {UPLOAD_DIR}")
                         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         original_filename = f"{timestamp}_{image.filename}"
