@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>YOLOv8 食物辨識系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --text-color: #1d1d1f;
+            --card-bg: #ffffff;
+            --hover-bg: #f5f5f7;
+            --border-color: #e5e5e5;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --secondary-text: #515154;
+            --muted-text: #86868b;
+            --border-radius: 10px;
+            --padding: 20px;
+            --highlight-color: #FF6384; /* 與圖表熱量顏色一致 */
+        }
+        .dark-mode {
+            --bg-color: #1d1d1f;
+            --text-color: #f5f5f7;
+            --card-bg: #2c2c2e;
+            --hover-bg: #4a4a4c;
+            --border-color: #4a4a4c;
+            --secondary-text: #d1d1d6;
+            --muted-text: #d1d1d6;
+            --highlight-color: #FF6384;
+        }
+        body {
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro", Arial, Helvetica, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: var(--text-color);
+            margin: 0;
+        }
+        .container {
+            padding: var(--padding) 20px;
+            max-width: 1400px; /* 增加最大寬度 */
+            margin: 0 auto;
+        }
+        .text-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        h2 {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+        .header-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .toggle-wrapper {
+            position: relative;
+            width: 140px;
+        }
+        .toggle-btn {
+            width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            background-color: var(--card-bg);
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-color);
+            padding: 8px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        .toggle-btn:hover {
+            background-color: var(--hover-bg);
+        }
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: none;
+            z-index: 10;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .dropdown.show {
+            display: block;
+            opacity: 1;
+        }
+        .dropdown-option {
+            padding: 8px 20px;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-color);
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dropdown-option:hover {
+            background-color: var(--hover-bg);
+        }
+        .dropdown-option.selected {
+            background-color: #e6f0fa;
+        }
+        .dark-mode .dropdown-option.selected {
+            background-color: #4a4a4c;
+            color: #f5f5f7;
+        }
+        .theme-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+        .theme-icon.light {
+            background-color: #ffffff;
+            border: 1px solid #1d1d1f;
+        }
+        .theme-icon.dark {
+            background-color: #1d1d1f;
+            border: 1px solid #f5f5f7;
+        }
+        .language-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background-size: cover;
+        }
+        .language-icon.zh-TW {
+            background-image: url("https://flagcdn.com/16x12/tw.png");
+        }
+        .language-icon.en {
+            background-image: url("https://flagcdn.com/16x12/us.png");
+        }
+        .card {
+            margin-top: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            border: none;
+            background-color: var(--card-bg);
+            padding: var(--padding);
+        }
+        #mainContent {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 20px; /* 縮小間距 */
+            flex-wrap: wrap;
+        }
+        #imageArea {
+            flex: 1;
+            min-width: 400px; /* 增加最小寬度 */
+            max-width: 600px; /* 增加最大寬度 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            padding: var(--padding);
+            overflow: visible;
+            position: relative;
+        }
+        #previewImg:empty::before {
+            content: attr(data-placeholder);
+            color: var(--muted-text);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+        }
+        #resultArea {
+            flex: 1;
+            min-width: 400px; /* 增加最小寬度 */
+            max-width: 700px; /* 增加最大寬度 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: var(--padding);
+        }
+        .nutrition-info {
+            width: 100%;
+            padding: 20px;
+            background-color: var(--hover-bg);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        .nutrition-group {
+            margin-top: 10px;
+            margin-bottom: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color);
+            border-left: 3px solid #36A2EB;
+            padding-left: 8px;
+        }
+        .nutrition-info .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .nutrition-info .info-item:last-child {
+            border-bottom: none;
+        }
+        .nutrition-info .info-item .label {
+            flex: 0 0 45%;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        .nutrition-info .info-item .value {
+            flex: 1;
+            text-align: left;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+        .nutrition-info .info-item .value[for="calories"] {
+            font-weight: 600;
+            color: var(--highlight-color);
+            background-color: rgba(255, 99, 132, 0.1); /* 熱量背景色 */
+            padding: 2px 8px;
+            border-radius: 5px;
+        }
+        .nutrition-info .info-item .food-name-bold {
+            font-weight: 600;
+        }
+        .unit-text {
+            font-size: 12px;
+            color: var(--muted-text);
+            margin-left: 5px;
+        }
+        .highlight {
+            animation: highlight 0.5s ease-in-out;
+        }
+        @keyframes highlight {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 400px; /* 進一步放大圖表 */
+            height: 400px; /* 進一步放大圖表 */
+            margin: 20px auto;
+            padding: 15px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        #nutritionChart {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .history-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            margin: 5px 0;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+        .history-item:hover {
+            background-color: var(--hover-bg);
+        }
+        .history-item .food-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        .history-item .timestamp {
+            font-size: 12px;
+            color: var(--muted-text);
+        }
+        .history-checkbox {
+            margin-right: 8px;
+            display: none;
+        }
+        .delete-mode .history-checkbox {
+            display: inline-block !important;
+        }
+        .delete-mode .delete-btn {
+            display: none !important;
+        }
+        .btn-sm {
+            padding: 2px 8px;
+            font-size: 12px;
+        }
+        #toggleDeleteMode {
+            padding: 4px 8px !important;
+            font-size: 14px !important;
+            line-height: 1 !important;
+        }
+        #toggleDeleteMode i {
+            font-size: 16px;
+        }
+        .form-label { color: var(--text-color); }
+        .dark-mode .form-control { background-color: #3a3a3c; color: #f5f5f7; border-color: #4a4a4c; }
+        .dark-mode .form-control::placeholder { color: #d1d1d6; }
+        .dark-mode .text-secondary { color: var(--muted-text) !important; }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px; /* 減少外距 */
+        }
+        input[type="number"] {
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+            appearance: none;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .portion-input-wrapper {
+            position: relative;
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 4px;
+            gap: 4px;
+            width: 120px; /* 增加寬度 */
+        }
+        .dark-mode .portion-input-wrapper {
+            background-color: #3a3a3c;
+            box-shadow: 0 1px 3px rgba(255, 255, 255, 0.1);
+        }
+        .portion-input {
+            width: 60px; /* 增加輸入框寬度 */
+            padding: 4px 8px;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            color: var(--text-color);
+            text-align: center;
+            outline: none;
+        }
+        .portion-input-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .portion-input-btn {
+            width: 28px; /* 增加按鈕尺寸 */
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f7;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .portion-input-btn:hover {
+            background-color: #e5e5e5;
+        }
+        .portion-input-btn:active {
+            transform: scale(0.95);
+        }
+        .dark-mode .portion-input-btn {
+            background-color: #4a4a4c;
+        }
+        .dark-mode .portion-input-btn:hover {
+            background-color: #5a5a5c;
+        }
+        .portion-input-btn i {
+            font-size: 14px; /* 增加圖標大小 */
+            color: #666;
+        }
+        .dark-mode .portion-input-btn i {
+            color: #d1d1d6;
+        }
+        @media (max-width: 992px) {
+            #mainContent {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+            #imageArea, #resultArea {
+                max-width: 500px; /* 調整小螢幕寬度 */
+            }
+            #imageArea {
+                min-height: 300px;
+                padding: 15px;
+            }
+            .chart-container {
+                max-width: 350px;
+                height: 350px;
+            }
+            body {
+                font-size: 14px;
+            }
+            .card {
+                padding: 15px;
+                margin: 10px;
+            }
+        }
+        @media (max-width: 576px) {
+            body {
+                font-size: 12px;
+            }
+            .nutrition-info {
+                padding: 15px;
+            }
+            .nutrition-info .info-item {
+                margin-bottom: 8px;
+            }
+            .nutrition-info .info-item .label,
+            .nutrition-info .info-item .value {
+                font-size: 14px;
+            }
+            .chart-container {
+                max-width: 300px;
+                height: 300px;
+            }
+            #imageArea, #resultArea {
+                max-width: 400px;
+            }
+            #imageArea {
+                min-height: 200px;
+                padding: 10px;
+            }
+            .portion-input-wrapper {
+                width: 100px; /* 小螢幕縮小按鈕 */
+            }
+            .portion-input {
+                width: 50px;
+            }
+            .portion-input-btn {
+                width: 24px;
+                height: 24px;
+            }
+            .portion-input-btn i {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="text-center mb-5">
+        <h2 id="title">🍱 YOLOv8 食物辨識系統 🍜</h2>
+        <div class="header-buttons">
+            <div class="toggle-wrapper">
+                <button id="themeToggle" class="toggle-btn"></button>
+                <div id="themeDropdown" class="dropdown">
+                    <div class="dropdown-option theme-option" data-theme="light">
+                        <span class="theme-icon light"></span><span data-key="lightTheme"></span>
+                    </div>
+                    <div class="dropdown-option theme-option" data-theme="dark">
+                        <span class="theme-icon dark"></span><span data-key="darkTheme"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="toggle-wrapper">
+                <button id="languageToggle" class="toggle-btn"></button>
+                <div id="languageDropdown" class="dropdown">
+                    <div class="dropdown-option language-option" data-lang="zh-TW">
+                        <span class="language-icon zh-TW"></span>繁體中文
+                    </div>
+                    <div class="dropdown-option language-option" data-lang="en">
+                        <span class="language-icon en"></span>English
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="mb-3">
+            <label class="form-label fw-bold" id="uploadLabel">選擇食物圖片：</label>
+            <input type="file" class="form-control" id="file" accept="image/*">
+        </div>
+        <div id="mainContent">
+            <div id="imageArea" style="position: relative;">
+                <video id="videoStream" autoplay playsinline style="width: 100%; height: auto; border-radius: 10px; display: none;"></video>
+                <canvas id="overlayCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;"></canvas>
+                <img id="previewImg" src="" data-placeholder="請上傳圖片以預覽" style="width: 100%; height: auto; border-radius: 10px;">
+                <canvas id="previewOverlayCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;"></canvas>
+            </div>
+            <div id="resultArea"></div>
+        </div>
+        <div class="action-buttons">
+            <button id="startStreamBtn" class="btn btn-primary">開啟相機</button>
+            <button id="stopStreamBtn" class="btn btn-danger d-none">關閉相機</button>
+            <button id="predictBtn" class="btn btn-success">🔍 辨識食物</button>
+            <button id="restartStreamBtn" class="btn btn-info d-none">🔄 重新辨識</button>
+        </div>
+        <div id="loading" class="spinner-border text-success mt-3 d-none" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mt-4 text-secondary" id="historyTitleText">📜 歷史紀錄</h5>
+            <button id="toggleDeleteMode" class="btn btn-warning btn-sm" title="刪除模式">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <button id="selectAll" class="btn btn-secondary btn-sm mb-3 d-none">全選</button>
+        <button id="confirmDelete" class="btn btn-danger btn-sm mb-3 d-none">確認刪除</button>
+        <input type="text" id="historySearch" class="form-control mb-2" placeholder="搜尋食物名稱">
+        <div id="historyArea" class="mt-2"></div>
+    </div>
+</div>
+
+<script>
+const translations = {
+    "zh-TW": {
+        "title": "🍱 YOLOv8 食物辨識系統 🍜",
+        "uploadLabel": "選擇食物圖片：",
+        "predictBtn": "🔍 辨識食物",
+        "startStreamBtn": "開啟相機",
+        "stopStreamBtn": "關閉相機",
+        "restartStreamBtn": "🔄 重新辨識",
+        "historyTitle": "📜 歷史紀錄",
+        "searchPlaceholder": "搜尋食物名稱",
+        "food_name": "🥘 食物名稱",
+        "portion": "🍽️ 份量",
+        "serving_size": "🍽️ 份量 (g)",
+        "calories": "🔥 熱量",
+        "protein": "💪 蛋白質",
+        "total_carbohydrate": "🍞 總碳水化合物",
+        "total_fat": "🥑 總脂肪",
+        "dietary_fiber": "🌾 膳食纖維",
+        "price": "💰 價格",
+        "confidence": "🎯 信心度",
+        "noFood": "⚠️ 未偵測到食物！",
+        "error": "❌ 錯誤",
+        "imageLoadError": "⚠️ 圖片載入失敗",
+        "unknown": "未知",
+        "themeToggle": "主題",
+        "languageToggle": "語言",
+        "lightTheme": "白色",
+        "darkTheme": "黑色",
+        "previewPlaceholder": "請上傳圖片以預覽",
+        "basicInfo": "基本資訊",
+        "nutritionInfo": "營養成分",
+        "otherInfo": "其他資訊"
+    },
+    "en": {
+        "title": "🍱 YOLOv8 Food Recognition System 🍜",
+        "uploadLabel": "Select Food Image:",
+        "predictBtn": "🔍 Recognize Food",
+        "startStreamBtn": "Open Camera",
+        "stopStreamBtn": "Close Camera",
+        "restartStreamBtn": "🔄 Restart Recognition",
+        "historyTitle": "📜 History",
+        "searchPlaceholder": "Search Food Name",
+        "food_name": "🥘 Food Name",
+        "portion": "🍽️ Serving Size",
+        "serving_size": "🍽️ Serving Size (g)",
+        "calories": "🔥 Calories",
+        "protein": "💪 Protein",
+        "total_carbohydrate": "🍞 Total Carbohydrates",
+        "total_fat": "🥑 Total Fat",
+        "dietary_fiber": "🌾 Dietary Fiber",
+        "price": "💰 Price",
+        "confidence": "🎯 Confidence",
+        "noFood": "⚠️ No Food Detected!",
+        "error": "❌ Error",
+        "imageLoadError": "⚠️ Failed to Load Image",
+        "unknown": "Unknown",
+        "themeToggle": "Theme",
+        "languageToggle": "Language",
+        "lightTheme": "Light",
+        "darkTheme": "Dark",
+        "previewPlaceholder": "Please upload an image to preview",
+        "basicInfo": "Basic Info",
+        "nutritionInfo": "Nutrition Info",
+        "otherInfo": "Other Info"
+    }
+};
+
+let currentLang = "zh-TW";
+let currentTheme = "light";
+let historyRecords = JSON.parse(localStorage.getItem('foodHistory')) || [];
+let nutritionChart = null;
+let isDeleteMode = false;
+let portionValues = {};
+
+const elements = {
+    title: document.getElementById("title"),
+    uploadLabel: document.getElementById("uploadLabel"),
+    predictBtn: document.getElementById("predictBtn"),
+    startStreamBtn: document.getElementById("startStreamBtn"),
+    stopStreamBtn: document.getElementById("stopStreamBtn"),
+    restartStreamBtn: document.getElementById("restartStreamBtn"),
+    historyTitleText: document.getElementById("historyTitleText"),
+    historySearch: document.getElementById("historySearch"),
+    themeToggle: document.getElementById("themeToggle"),
+    languageToggle: document.getElementById("languageToggle"),
+    toggleDeleteMode: document.getElementById("toggleDeleteMode"),
+    confirmDelete: document.getElementById("confirmDelete"),
+    selectAll: document.getElementById("selectAll"),
+    previewImg: document.getElementById("previewImg"),
+    resultArea: document.getElementById("resultArea"),
+    videoStream: document.getElementById("videoStream"),
+    historyArea: document.getElementById("historyArea"),
+    loading: document.getElementById("loading"),
+    overlayCanvas: document.getElementById("overlayCanvas"),
+    previewOverlayCanvas: document.getElementById("previewOverlayCanvas")
+};
+
+function updateText() {
+    const t = translations[currentLang];
+    elements.title.textContent = t.title;
+    elements.uploadLabel.textContent = t.uploadLabel;
+    elements.predictBtn.textContent = t.predictBtn;
+    elements.startStreamBtn.textContent = t.startStreamBtn;
+    elements.stopStreamBtn.textContent = t.stopStreamBtn;
+    elements.restartStreamBtn.textContent = t.restartStreamBtn;
+    elements.historyTitleText.textContent = t.historyTitle;
+    elements.historySearch.placeholder = t.searchPlaceholder;
+    elements.themeToggle.textContent = currentTheme === "light" ? t.lightTheme : t.darkTheme;
+    elements.languageToggle.textContent = currentLang === "zh-TW" ? "繁體中文" : "English";
+    elements.toggleDeleteMode.innerHTML = isDeleteMode 
+        ? `<i class="bi bi-x"></i>${currentLang === "en" ? " Exit" : " 退出"}` 
+        : `<i class="bi bi-trash"></i>${currentLang === "en" ? " Delete" : " 刪除"}`;
+    elements.confirmDelete.textContent = currentLang === "en" ? "Confirm Delete" : "確認刪除";
+    elements.selectAll.textContent = currentLang === "en" ? "Select All" : "全選";
+    elements.previewImg.setAttribute("data-placeholder", t.previewPlaceholder);
+    document.querySelectorAll('[data-key]').forEach(el => el.textContent = t[el.dataset.key]);
+}
+
+function updateTheme() {
+    document.body.classList.toggle("dark-mode", currentTheme === "dark");
+    if (nutritionChart) {
+        nutritionChart.options.plugins.legend.labels.color = currentTheme === "dark" ? "#f5f5f7" : "#1d1d1f";
+        nutritionChart.update();
+    }
+}
+
+function updateUI() {
+    updateText();
+    updateTheme();
+}
+
+updateUI();
+elements.predictBtn.focus();
+
+function setupDropdown(toggleId, dropdownId, optionsSelector, callback) {
+    const toggle = document.getElementById(toggleId);
+    const dropdown = document.getElementById(dropdownId);
+    toggle.addEventListener("click", () => dropdown.classList.toggle("show"));
+    dropdown.addEventListener("click", (e) => {
+        const option = e.target.closest(optionsSelector);
+        if (option) {
+            const value = option.getAttribute(`data-${toggleId === "themeToggle" ? "theme" : "lang"}`);
+            callback(value, option);
+            dropdown.classList.remove("show");
+            dropdown.querySelectorAll(optionsSelector).forEach(opt => opt.classList.remove("selected"));
+            option.classList.add("selected");
+        }
+    });
+}
+
+setupDropdown("themeToggle", "themeDropdown", ".theme-option", (theme) => {
+    currentTheme = theme;
+    updateUI();
+});
+
+setupDropdown("languageToggle", "languageDropdown", ".language-option", (lang) => {
+    currentLang = lang;
+    updateUI();
+    if (elements.resultArea.dataset.detections) {
+        const data = JSON.parse(elements.resultArea.dataset.detections);
+        const detectionsHtml = data.detections.map(d => renderDetection(d, portionValues[d.food_name] || 1)).join('');
+        elements.resultArea.innerHTML = `
+            <div class="nutrition-info">
+                ${detectionsHtml}
+                <div class="chart-container">
+                    <canvas id="nutritionChart"></canvas>
+                </div>
+            </div>
+        `;
+        elements.videoStream.style.display = "none";
+        elements.previewImg.src = data.image_url;
+        elements.previewImg.style.display = "block";
+        drawBoundingBoxes(data.detections, elements.previewOverlayCanvas, elements.previewImg);
+        elements.resultArea.dataset.detections = JSON.stringify(data);
+        renderChart(data.detections);
+    }
+    updateHistoryUI();
+});
+
+document.addEventListener("click", (e) => {
+    if (!e.target.closest(".toggle-wrapper")) {
+        document.querySelectorAll(".dropdown").forEach(dropdown => dropdown.classList.remove("show"));
+    }
+});
+
+function previewFile() {
+    const file = document.getElementById('file').files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        elements.previewImg.src = reader.result;
+        elements.previewImg.style.display = "block";
+        elements.videoStream.style.display = "none";
+        elements.overlayCanvas.getContext("2d").clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
+        elements.previewOverlayCanvas.getContext("2d").clearRect(0, 0, elements.previewOverlayCanvas.width, elements.previewOverlayCanvas.height);
+    };
+    reader.readAsDataURL(file);
+}
+
+function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = null) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const canvasWidth = targetElement.offsetWidth;
+    const canvasHeight = targetElement.offsetHeight;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+
+    const targetWidth = sourceCanvas ? sourceCanvas.width : (targetElement.naturalWidth || targetElement.videoWidth || canvasWidth);
+    const targetHeight = sourceCanvas ? sourceCanvas.height : (targetElement.naturalHeight || targetElement.videoHeight || canvasHeight);
+    const scaleX = canvasWidth / targetWidth;
+    const scaleY = canvasHeight / targetHeight;
+
+    detections.forEach(d => {
+        const box = d.boxes;
+        const x = box[0] * scaleX;
+        const y = box[1] * scaleY;
+        const width = (box[2] - box[0]) * scaleX;
+        const height = (box[3] - box[1]) * scaleY;
+        ctx.strokeStyle = "var(--highlight-color)"; /* 邊框顏色與圖表一致 */
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, width, height);
+        const foodName = currentLang === "en" 
+            ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) 
+            : (d.food_name || d.label);
+        const confidence = (d.confidence * 100).toFixed(2);
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "var(--highlight-color)";
+        ctx.fillRect(x, y - 25, ctx.measureText(`${foodName} (${confidence}%)`).width + 10, 20); /* 背景色 */
+        ctx.fillStyle = currentTheme === "dark" ? "#ffffff" : "#ffffff";
+        ctx.fillText(`${foodName} (${confidence}%)`, x + 5, y - 10);
+    });
+}
+
+function renderDetection(detection, multiplier = 1) {
+    const t = translations[currentLang];
+    const foodName = currentLang === "en" 
+        ? (d.label || detection.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) 
+        : (detection.food_name || detection.label);
+    const values = {
+        serving_size: detection.serving_size && !isNaN(detection.serving_size) ? (detection.serving_size * multiplier).toFixed(1) : "N/A",
+        calories: detection.calories && !isNaN(detection.calories) ? (detection.calories * multiplier).toFixed(2) : "N/A",
+        protein: detection.protein && !isNaN(detection.protein) ? (detection.protein * multiplier).toFixed(1) : "N/A",
+        total_carbohydrate: detection.total_carbohydrate && !isNaN(detection.total_carbohydrate) ? (detection.total_carbohydrate * multiplier).toFixed(1) : "N/A",
+        total_fat: detection.total_fat && !isNaN(detection.total_fat) ? (detection.total_fat * multiplier).toFixed(1) : "N/A",
+        dietary_fiber: detection.dietary_fiber && !isNaN(detection.dietary_fiber) ? (detection.dietary_fiber * multiplier).toFixed(1) : "N/A",
+        price: detection.price && !isNaN(detection.price) ? (detection.price * multiplier).toFixed(0) : "N/A",
+        confidence: (detection.confidence * 100).toFixed(2)
+    };
+    const priceUnit = currentLang === "en" ? "NTD" : "元";
+    return `
+        <div class="nutrition-group">${t.basicInfo}</div>
+        <div class="info-item">
+            <span class="label">${t.food_name}</span>
+            <span class="value food-name-bold">${foodName}</span>
+        </div>
+        <div class="info-item">
+            <span class="label">${t.portion}</span>
+            <span class="value portion-input-wrapper">
+                <input type="number" class="portion-input" step="0.5" min="0.5" value="${multiplier}" 
+                    data-food-name="${detection.food_name}" 
+                    oninput="this.dataset.value = this.value; portionValues['${detection.food_name}'] = this.value" 
+                    onchange="updatePortion(this, '${detection.food_name}')" 
+                    onkeypress="if(event.key === 'Enter') updatePortion(this, '${detection.food_name}')">
+                <span class="portion-input-buttons">
+                    <button class="portion-input-btn" onclick="adjustPortion(this, '${detection.food_name}', 0.5)"><i class="bi bi-chevron-up"></i></button>
+                    <button class="portion-input-btn" onclick="adjustPortion(this, '${detection.food_name}', -0.5)"><i class="bi bi-chevron-down"></i></button>
+                </span>
+            </span>
+        </div>
+        <div class="info-item">
+            <span class="label">${t.serving_size}</span>
+            <span class="value">${values.serving_size}${values.serving_size !== "N/A" ? "" : ""}<span class="unit-text">${values.serving_size !== "N/A" ? " g" : ""}</span></span>
+        </div>
+
+        <div class="nutrition-group">${t.nutritionInfo}</div>
+        <div class="info-item">
+            <span class="label">${t.calories}</span>
+            <span class="value" for="calories">${values.calories}${values.calories !== "N/A" ? "" : ""}<span class="unit-text">${values.calories !== "N/A" ? " kcal" : ""}</span></span>
+        </div>
+        <div class="info-item">
+            <span class="label">${t.protein}</span>
+            <span class="value">${values.protein}${values.protein !== "N/A" ? "" : ""}<span class="unit-text">${values.protein !== "N/A" ? " g" : ""}</span></span>
+        </div>
+        <div class="info-item">
+            <span class="label">${t.total_carbohydrate}</span>
+            <span class="value">${values.total_carbohydrate}${values.total_carbohydrate !== "N/A" ? "" : ""}<span class="unit-text">${values.total_carbohydrate !== "N/A" ? " g" : ""}</span></span>
+        </div>
+        <div class="info-item">
+            <span class="label">${t.total_fat}</span>
+            <span class="value">${values.total_fat}${values.total_fat !== "N/A" ? "" : ""}<span class="unit-text">${values.total_fat !== "N/A" ? " g" : ""}</span></span>
+        </div>
+        <div class="info-item">
+            <span class="label">${t.dietary_fiber}</span>
+            <span class="value">${values.dietary_fiber}${values.dietary_fiber !== "N/A" ? "" : ""}<span class="unit-text">${values.dietary_fiber !== "N/A" ? " g" : ""}</span></span>
+        </div>
+
+        <div class="nutrition-group">${t.otherInfo}</div>
+        <div class="info-item">
+            <span class="label">${t.price}</span>
+            <span class="value">${values.price}${values.price !== "N/A" ? "" : ""}<span class="unit-text">${values.price !== "N/A" ? " " + priceUnit : ""}</span></span>
+        </div>
+        <div class="info-item">
+            <span class="label">${t.confidence}</span>
+            <span class="value">${values.confidence}<span class="unit-text">%</span></span>
+        </div>
+    `;
+}
+
+function adjustPortion(button, foodName, change) {
+    const input = button.parentElement.parentElement.querySelector('.portion-input');
+    let value = parseFloat(input.value) || 1;
+    value = Math.max(0.5, value + change);
+    input.value = value;
+    input.dataset.value = value;
+    portionValues[foodName] = value;
+    updatePortion(input, foodName);
+}
+
+function renderChart(detections) {
+    const total = detections.reduce((acc, d) => {
+        const m = parseFloat(document.querySelector(`input[data-food-name="${d.food_name}"]`)?.value || 1);
+        return {
+            calories: acc.calories + (d.calories && !isNaN(d.calories) ? parseFloat(d.calories) * m : 0),
+            protein: acc.protein + (d.protein && !isNaN(d.protein) ? parseFloat(d.protein) * m : 0),
+            total_carbohydrate: acc.total_carbohydrate + (d.total_carbohydrate && !isNaN(d.total_carbohydrate) ? parseFloat(d.total_carbohydrate) * m : 0),
+            total_fat: acc.total_fat + (d.total_fat && !isNaN(d.total_fat) ? parseFloat(d.total_fat) * m : 0),
+            dietary_fiber: acc.dietary_fiber + (d.dietary_fiber && !isNaN(d.dietary_fiber) ? parseFloat(d.dietary_fiber) * m : 0)
+        };
+    }, { calories: 0, protein: 0, total_carbohydrate: 0, total_fat: 0, dietary_fiber: 0 });
+
+    const ctx = document.getElementById('nutritionChart')?.getContext('2d');
+    if (ctx) {
+        if (nutritionChart) nutritionChart.destroy();
+        const dataValues = [total.calories, total.protein, total.total_carbohydrate, total.total_fat, total.dietary_fiber];
+        if (dataValues.every(val => val === 0)) return;
+        nutritionChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [translations[currentLang].calories, translations[currentLang].protein, 
+                         translations[currentLang].total_carbohydrate, translations[currentLang].total_fat, 
+                         translations[currentLang].dietary_fiber],
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { 
+                        position: 'bottom', /* 標籤移到下方 */
+                        labels: { 
+                            boxWidth: 15, 
+                            font: { size: 14 }, /* 字體放大 */
+                            color: currentTheme === "dark" ? "#f5f5f7" : "#1d1d1f"
+                        } 
+                    },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                if (label === translations[currentLang].calories) {
+                                    return `${label}: ${value.toFixed(2)} kcal`;
+                                } else {
+                                    return `${label}: ${value.toFixed(1)} g`;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function updatePortion(input, foodName) {
+    let multiplier = parseFloat(input.value);
+    if (isNaN(multiplier) || multiplier < 0.5) {
+        multiplier = 0.5;
+    }
+    input.value = multiplier;
+    portionValues[foodName] = multiplier;
+    const currentData = JSON.parse(elements.resultArea.dataset.detections);
+    const updatedHtml = currentData.detections.map(d => 
+        d.food_name === foodName ? renderDetection(d, multiplier) : renderDetection(d, portionValues[d.food_name] || 1)
+    ).join('');
+    elements.resultArea.innerHTML = `
+        <div class="nutrition-info">
+            ${updatedHtml}
+            <div class="chart-container">
+                <canvas id="nutritionChart"></canvas>
+            </div>
+        </div>
+    `;
+    const updatedElements = elements.resultArea.querySelectorAll('.value');
+    updatedElements.forEach(el => el.classList.add('highlight'));
+    renderChart(currentData.detections);
+}
+
+async function predictImage() {
+    const fileInput = document.getElementById("file");
+    if (fileInput.files.length === 0) {
+        alert(translations[currentLang].uploadLabel);
+        return;
+    }
+    const formData = new FormData();
+    formData.append("image", fileInput.files[0]);
+    elements.loading.classList.remove("d-none");
+    try {
+        const response = await fetch("http://localhost:8000/predict", {
+            method: "POST",
+            body: formData,
+            mode: "cors"
+        });
+        if (!response.ok) throw new Error(`伺服器錯誤：${response.statusText}`);
+        const data = await response.json();
+        if (!data.detections || data.detections.length === 0) {
+            elements.resultArea.innerHTML = `<div class="alert alert-warning">${translations[currentLang].noFood}</div>`;
+            return;
+        }
+        elements.previewImg.src = data.image_url;
+        elements.previewImg.style.display = "block";
+        elements.videoStream.style.display = "none";
+        const detectionsHtml = data.detections.map(d => renderDetection(d)).join('');
+        elements.resultArea.innerHTML = `
+            <div class="nutrition-info">
+                ${detectionsHtml}
+                <div class="chart-container">
+                    <canvas id="nutritionChart"></canvas>
+                </div>
+            </div>
+        `;
+        elements.resultArea.dataset.detections = JSON.stringify(data);
+        renderChart(data.detections);
+        elements.previewImg.onload = () => {
+            elements.previewOverlayCanvas.width = elements.previewImg.offsetWidth;
+            elements.previewOverlayCanvas.height = elements.previewImg.offsetHeight;
+            drawBoundingBoxes(data.detections, elements.previewOverlayCanvas, elements.previewImg);
+        };
+        const record = {
+            timestamp: new Date().toLocaleString(),
+            detections: data.detections,
+            image_url: data.image_url
+        };
+        historyRecords.push(record);
+        localStorage.setItem('foodHistory', JSON.stringify(historyRecords));
+        updateHistoryUI();
+    } catch (err) {
+        const errorMsg = err.message.includes("Failed to fetch") ? "無法連接到伺服器" : err.message;
+        elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：${errorMsg}</div>`;
+        console.error("錯誤:", err);
+    } finally {
+        elements.loading.classList.add("d-none");
+    }
+}
+
+function updateHistoryUI() {
+    elements.historyArea.innerHTML = historyRecords.map((record, index) => `
+        <div class="history-item ${isDeleteMode ? 'delete-mode' : ''}" data-index="${index}">
+            <input type="checkbox" class="history-checkbox" data-index="${index}">
+            <span>
+                <span class="food-name">${record.detections.map(d => currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : (d.food_name || d.label)).join(', ')}</span>
+                <span class="timestamp"> - ${record.timestamp}</span>
+            </span>
+        </div>
+    `).join('');
+}
+
+function showHistoryDetail(index) {
+    const record = historyRecords[index];
+    const detectionsHtml = record.detections.map(d => renderDetection(d, portionValues[d.food_name] || 1)).join('');
+    elements.resultArea.innerHTML = `
+        <div class="nutrition-info">
+            ${detectionsHtml}
+            <div class="chart-container">
+                <canvas id="nutritionChart"></canvas>
+            </div>
+        </div>
+    `;
+    elements.videoStream.style.display = "none";
+    elements.previewImg.src = record.image_url;
+    elements.previewImg.style.display = "block";
+    elements.previewImg.onload = () => {
+        elements.previewOverlayCanvas.width = elements.previewImg.offsetWidth;
+        elements.previewOverlayCanvas.height = elements.previewImg.offsetHeight;
+        drawBoundingBoxes(record.detections, elements.previewOverlayCanvas, elements.previewImg);
+    };
+    elements.resultArea.dataset.detections = JSON.stringify(record);
+    renderChart(record.detections);
+}
+
+function filterHistory() {
+    const query = elements.historySearch.value.toLowerCase();
+    const filtered = historyRecords.filter(record => 
+        record.detections.some(d => 
+            (currentLang === "en" ? (d.label || d.food_name) : (d.food_name || d.label)).toLowerCase().includes(query)
+        )
+    );
+    elements.historyArea.innerHTML = filtered.map(record => {
+        const originalIndex = historyRecords.indexOf(record);
+        return `
+            <div class="history-item ${isDeleteMode ? 'delete-mode' : ''}" data-index="${originalIndex}">
+                <input type="checkbox" class="history-checkbox" data-index="${originalIndex}">
+                <span>
+                    <span class="food-name">${record.detections.map(d => currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : (d.food_name || d.label)).join(', ')}</span>
+                    <span class="timestamp"> - ${record.timestamp}</span>
+                </span>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleCheckbox(event, index) {
+    if (!isDeleteMode) {
+        showHistoryDetail(index);
+        return;
+    }
+    const target = event.target;
+    if (target.classList.contains('delete-btn') || target.tagName === 'BUTTON') return;
+    const checkbox = document.querySelector(`.history-checkbox[data-index="${index}"]`);
+    checkbox.checked = !checkbox.checked;
+}
+
+function toggleDeleteMode() {
+    isDeleteMode = !isDeleteMode;
+    elements.toggleDeleteMode.innerHTML = isDeleteMode 
+        ? `<i class="bi bi-x"></i>${currentLang === "en" ? " Exit" : " 退出"}` 
+        : `<i class="bi bi-trash"></i>${currentLang === "en" ? " Delete" : " 刪除"}`;
+    elements.confirmDelete.classList.toggle("d-none", !isDeleteMode);
+    elements.selectAll.classList.toggle("d-none", !isDeleteMode);
+    updateHistoryUI();
+}
+
+function confirmDelete() {
+    const selectedIndexes = Array.from(document.querySelectorAll('.history-checkbox:checked'))
+        .map(checkbox => parseInt(checkbox.dataset.index))
+        .sort((a, b) => b - a);
+    if (selectedIndexes.length === 0) {
+        alert(currentLang === "en" ? "Please select at least one record to delete." : "請至少選擇一筆紀錄進行刪除。");
+        return;
+    }
+    const confirmMsg = currentLang === "en" 
+        ? `Are you sure you want to delete ${selectedIndexes.length} record(s)?` 
+        : `確定要刪除 ${selectedIndexes.length} 筆紀錄嗎？`;
+    if (confirm(confirmMsg)) {
+        selectedIndexes.forEach(index => historyRecords.splice(index, 1));
+        localStorage.setItem('foodHistory', JSON.stringify(historyRecords));
+        toggleDeleteMode();
+    }
+}
+
+elements.toggleDeleteMode.addEventListener("click", toggleDeleteMode);
+elements.confirmDelete.addEventListener("click", confirmDelete);
+elements.selectAll.addEventListener("click", () => {
+    document.querySelectorAll('.history-checkbox').forEach(checkbox => checkbox.checked = true);
+});
+elements.historySearch.addEventListener("keyup", filterHistory);
+elements.historyArea.addEventListener("click", (e) => {
+    const item = e.target.closest(".history-item");
+    if (item) toggleCheckbox(e, parseInt(item.dataset.index));
+});
+
+document.getElementById("file").addEventListener("change", previewFile);
+
+let stream = null;
+let canvas = document.createElement("canvas");
+let overlayCtx = elements.overlayCanvas.getContext("2d");
+let detectionInterval = null;
+let lastDetections = null;
+let lastRecordTime = 0;
+const MIN_RECORD_INTERVAL = 5000;
+
+function startDetection() {
+    detectionInterval = setInterval(async () => {
+        canvas.getContext("2d").drawImage(elements.videoStream, 0, 0, canvas.width, canvas.height);
+        const imageDataUrl = canvas.toDataURL("image/jpeg");
+        const blob = await (await fetch(imageDataUrl)).blob();
+        const formData = new FormData();
+        formData.append("image", blob, "frame.jpg");
+        elements.loading.classList.remove("d-none");
+        try {
+            const response = await fetch("http://localhost:8000/predict", {
+                method: "POST",
+                body: formData,
+                mode: "cors"
+            });
+            if (!response.ok) throw new Error(`伺服器錯誤：${response.statusText}`);
+            const data = await response.json();
+            if (!data.detections || data.detections.length === 0) {
+                elements.resultArea.innerHTML = `<div class="alert alert-warning">${translations[currentLang].noFood}</div>`;
+                overlayCtx.clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
+                lastDetections = null;
+                return;
+            }
+            const detectionsHtml = data.detections.map(d => renderDetection(d)).join('');
+            elements.resultArea.innerHTML = `
+                <div class="nutrition-info">
+                    ${detectionsHtml}
+                    <div class="chart-container">
+                        <canvas id="nutritionChart"></canvas>
+                    </div>
+                </div>
+            `;
+            elements.resultArea.dataset.detections = JSON.stringify(data);
+            renderChart(data.detections);
+            overlayCtx.clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
+            drawBoundingBoxes(data.detections, elements.overlayCanvas, elements.videoStream);
+            const currentTime = Date.now();
+            const currentDetections = data.detections.map(d => d.food_name || d.label).sort().join(',');
+            const lastDetectionsStr = lastDetections ? lastDetections.map(d => d.food_name || d.label).sort().join(',') : '';
+            const isSameDetection = currentDetections === lastDetectionsStr;
+            if (!isSameDetection || (currentTime - lastRecordTime) >= MIN_RECORD_INTERVAL) {
+                const record = {
+                    timestamp: new Date().toLocaleString(),
+                    detections: data.detections,
+                    image_url: imageDataUrl
+                };
+                historyRecords.push(record);
+                localStorage.setItem('foodHistory', JSON.stringify(historyRecords));
+                updateHistoryUI();
+                lastDetections = data.detections;
+                lastRecordTime = currentTime;
+                clearInterval(detectionInterval);
+                elements.restartStreamBtn.classList.remove("d-none");
+                elements.videoStream.style.display = "none";
+                elements.previewImg.src = imageDataUrl;
+                elements.previewImg.style.display = "block";
+                const drawOnPreview = () => {
+                    if (!elements.previewImg.naturalWidth || !elements.previewImg.naturalHeight) {
+                        console.log("圖片尺寸未載入，重試中...");
+                        setTimeout(drawOnPreview, 100);
+                        return;
+                    }
+                    elements.previewOverlayCanvas.width = elements.previewImg.offsetWidth;
+                    elements.previewOverlayCanvas.height = elements.previewImg.offsetHeight;
+                    drawBoundingBoxes(data.detections, elements.previewOverlayCanvas, elements.previewImg, canvas);
+                    console.log("框框與文字繪製完成");
+                };
+                if (elements.previewImg.complete) {
+                    drawOnPreview();
+                } else {
+                    elements.previewImg.onload = drawOnPreview;
+                }
+                setTimeout(drawOnPreview, 2000);
+            }
+        } catch (err) {
+            const errorMsg = err.message.includes("Failed to fetch") ? "無法連接到伺服器" : err.message;
+            elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：${errorMsg}</div>`;
+            console.error("錯誤:", err);
+        } finally {
+            elements.loading.classList.add("d-none");
+        }
+    }, 500);
+}
+
+elements.startStreamBtn.addEventListener("click", async () => {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        elements.videoStream.srcObject = stream;
+        elements.videoStream.play();
+        elements.startStreamBtn.classList.add("d-none");
+        elements.stopStreamBtn.classList.remove("d-none");
+        elements.predictBtn.classList.add("d-none");
+        elements.restartStreamBtn.classList.add("d-none");
+        elements.previewImg.style.display = "none";
+        elements.videoStream.style.display = "block";
+        elements.videoStream.addEventListener("loadedmetadata", () => {
+            canvas.width = elements.videoStream.videoWidth;
+            canvas.height = elements.videoStream.videoHeight;
+            elements.overlayCanvas.width = elements.videoStream.offsetWidth;
+            elements.overlayCanvas.height = elements.videoStream.offsetHeight;
+            startDetection();
+        });
+    } catch (err) {
+        console.error("無法存取相機:", err);
+        alert("無法存取相機，請檢查權限或設備是否支援！");
+    }
+});
+
+elements.restartStreamBtn.addEventListener("click", () => {
+    elements.videoStream.style.display = "block";
+    elements.previewImg.style.display = "none";
+    elements.previewOverlayCanvas.getContext("2d").clearRect(0, 0, elements.previewOverlayCanvas.width, elements.previewOverlayCanvas.height);
+    startDetection();
+    elements.restartStreamBtn.classList.add("d-none");
+});
+
+elements.stopStreamBtn.addEventListener("click", () => {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+        elements.videoStream.srcObject = null;
+        clearInterval(detectionInterval);
+        overlayCtx.clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
+        elements.previewOverlayCanvas.getContext("2d").clearRect(0, 0, elements.previewOverlayCanvas.width, elements.previewOverlayCanvas.height);
+        elements.startStreamBtn.classList.remove("d-none");
+        elements.stopStreamBtn.classList.add("d-none");
+        elements.predictBtn.classList.remove("d-none");
+        elements.restartStreamBtn.classList.add("d-none");
+        elements.previewImg.style.display = "block";
+        elements.videoStream.style.display = "none";
+        elements.resultArea.innerHTML = "";
+    }
+});
+
+elements.predictBtn.addEventListener("click", predictImage);
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.keyCode === 13) {
+        e.preventDefault();
+        elements.predictBtn.click();
+    }
+});
+</script>
+</body>
+</html>
