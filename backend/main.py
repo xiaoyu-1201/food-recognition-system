@@ -141,7 +141,7 @@ async def predict_food(image: UploadFile = File(...)):
 
             response_data = {
                 "detections": detections,
-                "image_url": f"http://localhost:8000/uploads/{detected_filename}"
+                "image_url": f"/uploads/{detected_filename}"  # 使用相對路徑"image_url": f"http://localhost:8000/uploads/{detected_filename}"
             }
             logger.info(f"📦 偵測結果: {response_data}")
             return JSONResponse(content=response_data)
