@@ -3,3 +3,4 @@ uvicorn
 mysql-connector-python
 opencv-python
 ultralytics
+python-multipart
