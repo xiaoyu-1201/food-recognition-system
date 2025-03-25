@@ -25,7 +25,6 @@ app.add_middleware(
 )
 
 UPLOAD_DIR = "/tmp/uploads"  # Render 臨時儲存路徑os.makedirs(UPLOAD_DIR, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 model = YOLO("food_yolov8_multi_GoogleColab.pt")
 
@@ -48,6 +47,16 @@ async def options_predict():
 @app.post("/predict")
 async def predict_food(image: UploadFile = File(...)):
     try:
+        # 動態建立目錄
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        if not os.path.exists(UPLOAD_DIR):
+            raise RuntimeError(f"Failed to create directory {UPLOAD_DIR}")
+
+        # 動態掛載（僅第一次執行）
+        if "/uploads" not in [route.path for route in app.routes]:
+            app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+            logger.info(f"Mounted /uploads to {UPLOAD_DIR}"
+                        
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         original_filename = f"{timestamp}_{image.filename}"
         img_path = os.path.join(UPLOAD_DIR, original_filename)
