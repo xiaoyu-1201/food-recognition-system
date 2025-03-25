@@ -156,8 +156,9 @@
             box-shadow: var(--shadow);
             border: none;
             background-color: var(--card-bg);
-            padding: var(--padding);
-            overflow: hidden; /* 修復：防止內容超出白色底框 */
+            padding: 15px; /* 修復：減少內邊距，避免內容超出 */
+            overflow: hidden;
+            box-sizing: border-box; /* 修復：確保內邊距不影響寬度 */
         }
         #mainContent {
             display: flex;
@@ -169,12 +170,12 @@
         #imageArea {
             flex: 1;
             min-width: 400px;
-            max-width: 100%; /* 修復：限制圖片區域寬度 */
+            max-width: calc(100% - 30px); /* 修復：考慮內邊距 */
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 400px;
-            padding: var(--padding);
+            padding: 0; /* 修復：移除內邊距 */
             overflow: hidden;
             position: relative;
         }
@@ -188,32 +189,38 @@
             font-size: 16px;
         }
         #previewImg {
-            max-width: 100%; /* 修復：確保圖片不超出父容器 */
+            max-width: 100%;
             height: auto;
             border-radius: 10px;
             display: block;
-            margin: 0 auto; /* 修復：圖片居中 */
+            margin: 0 auto;
+        }
+        #videoStream {
+            max-width: 100%; /* 修復：確保視頻不超出 */
+            height: auto;
+            border-radius: 10px;
         }
         #resultArea {
             flex: 1;
             min-width: 400px;
-            max-width: 100%; /* 修復：限制結果區域寬度 */
+            max-width: calc(100% - 30px); /* 修復：考慮內邊距 */
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: var(--padding);
+            padding: 0; /* 修復：移除內邊距 */
             margin: 0 auto;
             text-align: center;
         }
         .nutrition-info {
             width: 100%;
-            max-width: 100%; /* 修復：適應父容器寬度 */
+            max-width: 100%;
             padding: 20px;
             background-color: var(--hover-bg);
             border-radius: var(--border-radius);
             border: 1px solid var(--border-color);
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             margin: 0 auto;
+            box-sizing: border-box; /* 修復：確保內邊距不影響寬度 */
         }
         .nutrition-group {
             margin-top: 10px;
@@ -241,7 +248,7 @@
             font-weight: 600;
             color: var(--text-color);
             text-align: left;
-            display: inline-block; /* 修復：確保文字對齊 */
+            display: inline-block;
         }
         .nutrition-info .info-item .value {
             flex: 0 0 60%;
@@ -250,7 +257,7 @@
             font-weight: 500;
             display: flex;
             align-items: center;
-            justify-content: flex-start; /* 修復：確保值與標籤對齊 */
+            justify-content: flex-start;
         }
         .nutrition-info .info-item .value[for="calories"] {
             font-weight: 600;
@@ -258,7 +265,7 @@
             background-color: rgba(255, 99, 132, 0.1);
             padding: 2px 8px;
             border-radius: 5px;
-            max-width: fit-content; /* 修復：粉紅色框框根據內容調整 */
+            max-width: fit-content;
         }
         .nutrition-info .info-item .food-name-bold {
             font-weight: 600;
@@ -364,15 +371,15 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             padding: 4px;
             gap: 4px;
-            width: auto; /* 修復：自適應寬度 */
-            max-width: 100px; /* 修復：限制最大寬度 */
+            width: auto;
+            max-width: 100px;
         }
         .dark-mode .portion-input-wrapper {
             background-color: #3a3a3c;
             box-shadow: 0 1px 3px rgba(255, 255, 255, 0.1);
         }
         .portion-input {
-            width: 50px; /* 修復：縮小輸入框寬度 */
+            width: 50px;
             padding: 4px 8px;
             border: none;
             background: transparent;
@@ -430,7 +437,7 @@
             }
             #imageArea {
                 min-height: 300px;
-                padding: 15px;
+                padding: 0;
             }
             .chart-container {
                 max-width: 350px;
@@ -440,7 +447,7 @@
                 font-size: 14px;
             }
             .card {
-                padding: 15px;
+                padding: 10px;
                 margin: 10px;
             }
         }
@@ -470,14 +477,14 @@
             }
             #imageArea {
                 min-height: 200px;
-                padding: 10px;
+                padding: 0;
             }
             .portion-input-wrapper {
-                width: auto; /* 修復：自適應寬度 */
-                max-width: 80px; /* 修復：小螢幕下限制寬度 */
+                width: auto;
+                max-width: 80px;
             }
             .portion-input {
-                width: 40px; /* 修復：小螢幕下縮小輸入框 */
+                width: 40px;
             }
             .portion-input-btn {
                 width: 24px;
@@ -788,7 +795,7 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
         const y = box[1] * scaleY;
         const width = (box[2] - box[0]) * scaleX;
         const height = (box[3] - box[1]) * scaleY;
-        ctx.strokeStyle = "#00FF00"; /* 修復：改為綠色框框 */
+        ctx.strokeStyle = "#00FF00";
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, width, height);
         const foodName = currentLang === "en" 
@@ -796,9 +803,9 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
             : (d.food_name || d.label);
         const confidence = (d.confidence * 100).toFixed(2);
         ctx.font = "16px Arial";
-        ctx.fillStyle = "#00FF00"; /* 修復：改為綠色背景 */
+        ctx.fillStyle = "#00FF00";
         ctx.fillRect(x, y - 25, ctx.measureText(`${foodName} (${confidence}%)`).width + 10, 20);
-        ctx.fillStyle = "#ffffff"; /* 修復：白色文字 */
+        ctx.fillStyle = "#ffffff";
         ctx.fillText(`${foodName} (${confidence}%)`, x + 5, y - 10);
     });
 }
@@ -827,15 +834,17 @@ function renderDetection(detection, multiplier = 1) {
         </div>
         <div class="info-item">
             <span class="label">${t.portion}</span>
-            <span class="value portion-input-wrapper">
-                <input type="number" class="portion-input" step="0.5" min="0.5" value="${multiplier}" 
-                    data-food-name="${detection.food_name}" 
-                    oninput="this.dataset.value = this.value; portionValues['${detection.food_name}'] = this.value" 
-                    onchange="updatePortion(this, '${detection.food_name}')" 
-                    onkeypress="if(event.key === 'Enter') updatePortion(this, '${detection.food_name}')">
-                <span class="portion-input-buttons">
-                    <button class="portion-input-btn" onclick="adjustPortion(this, '${detection.food_name}', 0.5)"><i class="bi bi-chevron-up"></i></button>
-                    <button class="portion-input-btn" onclick="adjustPortion(this, '${detection.food_name}', -0.5)"><i class="bi bi-chevron-down"></i></button>
+            <span class="value">
+                <span class="portion-input-wrapper">
+                    <input type="number" class="portion-input" step="0.5" min="0.5" value="${multiplier}" 
+                        data-food-name="${detection.food_name}" 
+                        oninput="this.dataset.value = this.value; portionValues['${detection.food_name}'] = this.value" 
+                        onchange="updatePortion(this, '${detection.food_name}')" 
+                        onkeypress="if(event.key === 'Enter') updatePortion(this, '${detection.food_name}')">
+                    <span class="portion-input-buttons">
+                        <button class="portion-input-btn" onclick="adjustPortion(this, '${detection.food_name}', 0.5)"><i class="bi bi-chevron-up"></i></button>
+                        <button class="portion-input-btn" onclick="adjustPortion(this, '${detection.food_name}', -0.5)"><i class="bi bi-chevron-down"></i></button>
+                    </span>
                 </span>
             </span>
         </div>
@@ -1317,5 +1326,7 @@ document.addEventListener("keydown", (e) => {
     }
 });
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925f9a009b2f4594',t:'MTc0MjkxODIyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925f9a009b2f4594',t:'MTc0MjkxODIyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925fb1145cb8bf6d',t:'MTc0MjkxOTE2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
 </html>
