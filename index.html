@@ -469,6 +469,24 @@ function updateUI() {
 updateUI();
 elements.predictBtn.focus();
 
+// 添加滾動監聽
+window.addEventListener("scroll", () => {
+    const foodListArea = document.getElementById("foodListArea");
+    const resultArea = document.getElementById("resultArea");
+    
+    if (foodListArea && resultArea) {
+        const foodListRect = foodListArea.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+
+        // 如果foodListArea進入視窗（即頂部進入可見區域），隱藏resultArea
+        if (foodListRect.top <= windowHeight && foodListRect.bottom >= 0) {
+            resultArea.classList.add("hidden");
+        } else {
+            resultArea.classList.remove("hidden");
+        }
+    }
+});
+
 function setupDropdown(toggleId, dropdownId, optionsSelector, callback) {
     const toggle = document.getElementById(toggleId);
     const dropdown = document.getElementById(dropdownId);
