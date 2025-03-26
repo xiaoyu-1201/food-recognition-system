@@ -9,502 +9,176 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-color: #f5f5f7;
-            --text-color: #1d1d1f;
-            --card-bg: #ffffff;
-            --hover-bg: #f5f5f7;
-            --border-color: #e5e5e5;
-            --shadow: 0 2px 8px rgba(0,0,0,0.1);
-            --secondary-text: #515154;
-            --muted-text: #86868b;
-            --border-radius: 10px;
-            --padding: 20px;
-            --highlight-color: #FF6384;
+            --bg-color: #f5f5f7; --text-color: #1d1d1f; --card-bg: #ffffff; --hover-bg: #f5f5f7;
+            --border-color: #e5e5e5; --shadow: 0 2px 8px rgba(0,0,0,0.1); --secondary-text: #515154;
+            --muted-text: #86868b; --border-radius: 10px; --padding: 20px; --highlight-color: #FF6384;
         }
         .dark-mode {
-            --bg-color: #1d1d1f;
-            --text-color: #f5f5f7;
-            --card-bg: #2c2c2e;
-            --hover-bg: #4a4a4c;
-            --border-color: #4a4a4c;
-            --secondary-text: #d1d1d6;
-            --muted-text: #d1d1d6;
-            --highlight-color: #FF6384;
+            --bg-color: #1d1d1f; --text-color: #f5f5f7; --card-bg: #2c2c2e; --hover-bg: #4a4a4c;
+            --border-color: #4a4a4c; --secondary-text: #d1d1d6; --muted-text: #d1d1d6; --highlight-color: #FF6384;
         }
         body {
-            background-color: var(--bg-color);
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro", Arial, Helvetica, sans-serif;
-            font-size: 16px;
-            line-height: 1.5;
-            color: var(--text-color);
-            margin: 0;
+            background-color: var(--bg-color); font-family: -apple-system, BlinkMacSystemFont, "SF Pro", Arial, sans-serif;
+            font-size: 16px; line-height: 1.5; color: var(--text-color); margin: 0;
         }
         .container {
-            padding: var(--padding) 20px;
-            max-width: 1400px;
-            margin: 0 auto;
+            padding: var(--padding) 20px; max-width: 1400px; margin: 0 auto;
         }
         .text-center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
         h2 {
-            font-size: 32px;
-            font-weight: 600;
-            color: var(--text-color);
-            margin: 0;
-            white-space: normal; /* 修復：允許標題換行 */
-            text-align: center;
-            display: flex;
-            align-items: center;
-            gap: 10px; /* 修復：為圖案與文字添加間距 */
+            font-size: 32px; font-weight: 600; color: var(--text-color); margin: 0; white-space: normal;
+            text-align: center; display: flex; align-items: center; gap: 10px;
         }
-        h2::before, h2::after {
-            content: "🍱";
-            font-size: 32px;
-            flex-shrink: 0; /* 修復：確保圖案不被壓縮 */
-        }
-        h2::after {
-            content: "🍜";
-        }
-        .header-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-        .toggle-wrapper {
-            position: relative;
-            width: 140px;
-        }
+        h2::before, h2::after { content: "🍱"; font-size: 32px; flex-shrink: 0; }
+        h2::after { content: "🍜"; }
+        .header-buttons { display: flex; gap: 15px; justify-content: center; }
+        .toggle-wrapper { position: relative; width: 140px; }
         .toggle-btn {
-            width: 100%;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            background-color: var(--card-bg);
-            border: none;
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-color);
-            padding: 8px 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.2s ease;
+            width: 100%; border-radius: var(--border-radius); box-shadow: var(--shadow);
+            background-color: var(--card-bg); border: none; font-size: 16px; font-weight: 500;
+            color: var(--text-color); padding: 8px 20px; display: flex; justify-content: center;
+            align-items: center; transition: all 0.2s ease;
         }
-        .toggle-btn:hover {
-            background-color: var(--hover-bg);
-        }
+        .toggle-btn:hover { background-color: var(--hover-bg); }
         .dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            width: 100%;
-            background-color: var(--card-bg);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            display: none;
-            z-index: 10;
-            overflow: hidden;
-            opacity: 0;
-            transition: opacity 0.2s ease;
+            position: absolute; top: 100%; left: 0; width: 100%; background-color: var(--card-bg);
+            border-radius: var(--border-radius); box-shadow: var(--shadow); display: none; z-index: 10;
+            overflow: hidden; opacity: 0; transition: opacity 0.2s ease;
         }
-        .dropdown.show {
-            display: block;
-            opacity: 1;
-        }
+        .dropdown.show { display: block; opacity: 1; }
         .dropdown-option {
-            padding: 8px 20px;
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-color);
-            text-align: center;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            padding: 8px 20px; font-size: 16px; font-weight: 500; color: var(--text-color);
+            text-align: center; cursor: pointer; transition: background 0.2s ease; display: flex;
+            align-items: center; gap: 8px;
         }
-        .dropdown-option:hover {
-            background-color: var(--hover-bg);
-        }
-        .dropdown-option.selected {
-            background-color: #e6f0fa;
-        }
-        .dark-mode .dropdown-option.selected {
-            background-color: #4a4a4c;
-            color: #f5f5f7;
-        }
-        .theme-icon {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-        }
-        .theme-icon.light {
-            background-color: #ffffff;
-            border: 1px solid #1d1d1f;
-        }
-        .theme-icon.dark {
-            background-color: #1d1d1f;
-            border: 1px solid #f5f5f7;
-        }
-        .language-icon {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            background-size: cover;
-        }
-        .language-icon.zh-TW {
-            background-image: url("https://flagcdn.com/16x12/tw.png");
-        }
-        .language-icon.en {
-            background-image: url("https://flagcdn.com/16x12/us.png");
-        }
+        .dropdown-option:hover { background-color: var(--hover-bg); }
+        .dropdown-option.selected { background-color: #e6f0fa; }
+        .dark-mode .dropdown-option.selected { background-color: #4a4a4c; color: #f5f5f7; }
+        .theme-icon { display: inline-block; width: 16px; height: 16px; border-radius: 50%; }
+        .theme-icon.light { background-color: #ffffff; border: 1px solid #1d1d1f; }
+        .theme-icon.dark { background-color: #1d1d1f; border: 1px solid #f5f5f7; }
+        .language-icon { display: inline-block; width: 16px; height: 16px; background-size: cover; }
+        .language-icon.zh-TW { background-image: url("https://flagcdn.com/16x12/tw.png"); }
+        .language-icon.en { background-image: url("https://flagcdn.com/16x12/us.png"); }
         .card {
-            margin-top: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            border: none;
-            background-color: var(--card-bg);
-            padding: 15px;
-            overflow: hidden;
-            box-sizing: border-box;
+            margin-top: 20px; border-radius: var(--border-radius); box-shadow: var(--shadow);
+            border: none; background-color: var(--card-bg); padding: 15px; overflow: hidden; box-sizing: border-box;
         }
         #mainContent {
-            display: flex;
-            justify-content: space-between;
-            align-items: stretch;
-            gap: 20px;
-            flex-wrap: wrap;
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
         #imageArea {
-            flex: 1;
-            min-width: 400px;
-            max-width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 400px;
-            padding: 0;
-            overflow: hidden;
-            position: relative;
+            flex: 1; min-width: 400px; max-width: 100%; display: flex; align-items: center;
+            justify-content: center; min-height: 400px; padding: 0; overflow: hidden; position: relative;
         }
         #previewImg:empty::before {
-            content: attr(data-placeholder);
-            color: var(--muted-text);
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 16px;
+            content: attr(data-placeholder); color: var(--muted-text); position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px;
         }
-        #previewImg {
-            max-width: 100%;
-            height: auto;
-            border-radius: 10px;
-            display: block;
-            margin: 0 auto;
-        }
-        #videoStream {
-            max-width: 100%;
-            height: auto;
-            border-radius: 10px;
-        }
+        #previewImg { max-width: 100%; height: auto; border-radius: 10px; display: block; margin: 0 auto; }
+        #videoStream { max-width: 100%; height: auto; border-radius: 10px; }
         #resultArea {
-            flex: 1;
-            min-width: 400px;
-            max-width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0;
-            margin: 0 auto;
-            text-align: center;
+            min-width: 100%; max-width: 100%; display: flex; flex-direction: column;
+            justify-content: center; padding: 0; margin: 0 auto; text-align: center;
         }
         .nutrition-info {
-            width: 100%;
-            max-width: 100%;
-            padding: 20px;
-            background-color: var(--hover-bg);
-            border-radius: var(--border-radius);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-            margin: 0 auto;
-            box-sizing: border-box;
+            width: 100%; max-width: 100%; padding: 20px; background-color: var(--hover-bg);
+            border-radius: var(--border-radius); border: 1px solid var(--border-color);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin: 0 auto; box-sizing: border-box;
         }
         .nutrition-group {
-            margin-top: 10px;
-            margin-bottom: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-color);
-            border-left: 3px solid #36A2EB;
-            padding-left: 8px;
+            margin-top: 10px; margin-bottom: 8px; font-size: 16px; font-weight: 600;
+            color: var(--text-color); border-left: 3px solid #36A2EB; padding-left: 8px;
         }
         .nutrition-info .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            gap: 10px;
-            border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+            padding-bottom: 8px; gap: 10px; border-bottom: 1px solid var(--border-color);
         }
-        .nutrition-info .info-item:last-child {
-            border-bottom: none;
-        }
+        .nutrition-info .info-item:last-child { border-bottom: none; }
         .nutrition-info .info-item .label {
-            flex: 0 0 40%;
-            font-weight: 600;
-            color: var(--text-color);
-            text-align: left;
-            display: inline-block;
+            flex: 0 0 40%; font-weight: 600; color: var(--text-color); text-align: left; display: inline-block;
         }
         .nutrition-info .info-item .value {
-            flex: 0 0 60%;
-            text-align: left;
-            color: var(--text-color);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
+            flex: 0 0 60%; text-align: left; color: var(--text-color); font-weight: 500;
+            display: flex; align-items: center; justify-content: flex-start;
         }
         .nutrition-info .info-item .value[for="calories"] {
-            font-weight: 600;
-            color: var(--highlight-color);
-            background-color: rgba(255, 99, 132, 0.1);
-            padding: 2px 8px;
-            border-radius: 5px;
-            max-width: fit-content;
+            font-weight: 600; color: var(--highlight-color); background-color: rgba(255, 99, 132, 0.1);
+            padding: 2px 8px; border-radius: 5px; max-width: fit-content;
         }
-        .nutrition-info .info-item .food-name-bold {
-            font-weight: 600;
-        }
-        .unit-text {
-            font-size: 12px;
-            color: var(--muted-text);
-            margin-left: 5px;
-        }
-        .highlight {
-            animation: highlight 0.5s ease-in-out;
-        }
-        @keyframes highlight {
-            0% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
+        .nutrition-info .info-item .food-name-bold { font-weight: 600; }
+        .unit-text { font-size: 12px; color: var(--muted-text); margin-left: 5px; }
+        .highlight { animation: highlight 0.5s ease-in-out; }
+        @keyframes highlight { 0% { opacity: 0.5; } 100% { opacity: 1; } }
         .chart-container {
-            width: 100%;
-            max-width: 400px;
-            height: 400px;
-            margin: 20px auto;
-            padding: 15px;
-            background-color: var(--card-bg);
-            border-radius: var(--border-radius);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            width: 100%; max-width: 400px; height: 400px; margin: 20px auto; padding: 15px;
+            background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: 0 1px 4px rgba(0,0,0,0.05);
         }
-        #nutritionChart {
-            width: 100% !important;
-            height: 100% !important;
-        }
+        #nutritionChart { width: 100% !important; height: 100% !important; }
         .history-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 15px;
-            margin: 5px 0;
-            background-color: var(--card-bg);
-            border-radius: var(--border-radius);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-            transition: background 0.2s ease;
-            cursor: pointer;
+            display: flex; align-items: center; padding: 10px 15px; margin: 5px 0;
+            background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            transition: background 0.2s ease; cursor: pointer;
         }
-        .history-item:hover {
-            background-color: var(--hover-bg);
-        }
-        .history-item .food-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text-color);
-        }
-        .history-item .timestamp {
-            font-size: 12px;
-            color: var(--muted-text);
-        }
-        .history-checkbox {
-            margin-right: 8px;
-            display: none;
-        }
-        .delete-mode .history-checkbox {
-            display: inline-block !important;
-        }
-        .delete-mode .delete-btn {
-            display: none !important;
-        }
-        .btn-sm {
-            padding: 2px 8px;
-            font-size: 12px;
-        }
-        #toggleDeleteMode {
-            padding: 4px 8px !important;
-            font-size: 14px !important;
-            line-height: 1 !important;
-        }
-        #toggleDeleteMode i {
-            font-size: 16px;
-        }
+        .history-item:hover { background-color: var(--hover-bg); }
+        .history-item .food-name { font-weight: 600; font-size: 14px; color: var(--text-color); }
+        .history-item .timestamp { font-size: 12px; color: var(--muted-text); }
+        .history-checkbox { margin-right: 8px; display: none; }
+        .delete-mode .history-checkbox { display: inline-block !important; }
+        .delete-mode .delete-btn { display: none !important; }
+        .btn-sm { padding: 2px 8px; font-size: 12px; }
+        #toggleDeleteMode { padding: 4px 8px !important; font-size: 14px !important; line-height: 1 !important; }
+        #toggleDeleteMode i { font-size: 16px; }
         .form-label { color: var(--text-color); }
         .dark-mode .form-control { background-color: #3a3a3c; color: #f5f5f7; border-color: #4a4a4c; }
         .dark-mode .form-control::placeholder { color: #d1d1d6; }
         .dark-mode .text-secondary { color: var(--muted-text) !important; }
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 10px;
-        }
-        input[type="number"] {
-            -webkit-appearance: none;
-            -moz-appearance: textfield;
-            appearance: none;
-        }
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+        .action-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+        input[type="number"] { -webkit-appearance: none; -moz-appearance: textfield; appearance: none; }
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .portion-input-wrapper {
-            position: relative;
-            display: inline-flex;
-            flex-direction: row;
-            align-items: center;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 4px;
-            gap: 4px;
-            width: auto;
-            max-width: 100px;
+            position: relative; display: inline-flex; flex-direction: row; align-items: center;
+            background-color: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 4px; gap: 4px; width: auto; max-width: 100px;
         }
-        .dark-mode .portion-input-wrapper {
-            background-color: #3a3a3c;
-            box-shadow: 0 1px 3px rgba(255, 255, 255, 0.1);
-        }
+        .dark-mode .portion-input-wrapper { background-color: #3a3a3c; box-shadow: 0 1px 3px rgba(255, 255, 255, 0.1); }
         .portion-input {
-            width: 50px;
-            padding: 4px 8px;
-            border: none;
-            background: transparent;
-            font-size: 16px;
-            color: var(--text-color);
-            text-align: center;
-            outline: none;
+            width: 50px; padding: 4px 8px; border: none; background: transparent; font-size: 16px;
+            color: var(--text-color); text-align: center; outline: none;
         }
-        .portion-input-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
+        .portion-input-buttons { display: flex; flex-direction: column; gap: 2px; }
         .portion-input-btn {
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f5f5f7;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+            background-color: #f5f5f7; border-radius: 50%; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease;
         }
-        .portion-input-btn:hover {
-            background-color: #e5e5e5;
-        }
-        .portion-input-btn:active {
-            transform: scale(0.95);
-        }
-        .dark-mode .portion-input-btn {
-            background-color: #4a4a4c;
-        }
-        .dark-mode .portion-input-btn:hover {
-            background-color: #5a5a5c;
-        }
-        .portion-input-btn i {
-            font-size: 14px;
-            color: #666;
-        }
-        .dark-mode .portion-input-btn i {
-            color: #d1d1d6;
-        }
+        .portion-input-btn:hover { background-color: #e5e5e5; }
+        .portion-input-btn:active { transform: scale(0.95); }
+        .dark-mode .portion-input-btn { background-color: #4a4a4c; }
+        .dark-mode .portion-input-btn:hover { background-color: #5a5a5c; }
+        .portion-input-btn i { font-size: 14px; color: #666; }
+        .dark-mode .portion-input-btn i { color: #d1d1d6; }
         @media (max-width: 992px) {
-            #mainContent {
-                flex-direction: column;
-                align-items: center;
-                gap: 20px;
-                text-align: center;
-            }
-            #imageArea, #resultArea {
-                max-width: 500px;
-                width: 100%;
-                align-self: center;
-            }
-            #imageArea {
-                min-height: 300px;
-                padding: 0;
-            }
-            .chart-container {
-                max-width: 350px;
-                height: 350px;
-            }
-            body {
-                font-size: 14px;
-            }
-            .card {
-                padding: 10px;
-                margin: 10px;
-            }
+            #imageArea, #resultArea { max-width: 500px; width: 100%; align-self: center; }
+            #imageArea { min-height: 300px; padding: 0; }
+            .chart-container { max-width: 350px; height: 350px; }
+            body { font-size: 14px; }
+            .card { padding: 10px; margin: 10px; }
         }
         @media (max-width: 576px) {
-            body {
-                font-size: 12px;
-            }
-            h2 {
-                font-size: 24px;
-            }
-            .nutrition-info {
-                padding: 15px;
-            }
-            .nutrition-info .info-item {
-                margin-bottom: 8px;
-            }
-            .nutrition-info .info-item .label,
-            .nutrition-info .info-item .value {
-                font-size: 14px;
-            }
-            .chart-container {
-                max-width: 300px;
-                height: 300px;
-            }
-            #imageArea, #resultArea {
-                max-width: 400px;
-            }
-            #imageArea {
-                min-height: 200px;
-                padding: 0;
-            }
-            .portion-input-wrapper {
-                width: auto;
-                max-width: 80px;
-            }
-            .portion-input {
-                width: 40px;
-            }
-            .portion-input-btn {
-                width: 24px;
-                height: 24px;
-            }
-            .portion-input-btn i {
-                font-size: 12px;
-            }
+            body { font-size: 12px; }
+            h2 { font-size: 24px; }
+            .nutrition-info { padding: 15px; }
+            .nutrition-info .info-item { margin-bottom: 8px; }
+            .nutrition-info .info-item .label, .nutrition-info .info-item .value { font-size: 14px; }
+            .chart-container { max-width: 300px; height: 300px; }
+            #imageArea, #resultArea { max-width: 400px; }
+            #imageArea { min-height: 200px; padding: 0; }
+            .portion-input-wrapper { width: auto; max-width: 80px; }
+            .portion-input { width: 40px; }
+            .portion-input-btn { width: 24px; height: 24px; }
+            .portion-input-btn i { font-size: 12px; }
         }
     </style>
 </head>
@@ -516,23 +190,15 @@
             <div class="toggle-wrapper">
                 <button id="themeToggle" class="toggle-btn"></button>
                 <div id="themeDropdown" class="dropdown">
-                    <div class="dropdown-option theme-option" data-theme="light">
-                        <span class="theme-icon light"></span><span data-key="lightTheme"></span>
-                    </div>
-                    <div class="dropdown-option theme-option" data-theme="dark">
-                        <span class="theme-icon dark"></span><span data-key="darkTheme"></span>
-                    </div>
+                    <div class="dropdown-option theme-option" data-theme="light"><span class="theme-icon light"></span><span data-key="lightTheme"></span></div>
+                    <div class="dropdown-option theme-option" data-theme="dark"><span class="theme-icon dark"></span><span data-key="darkTheme"></span></div>
                 </div>
             </div>
             <div class="toggle-wrapper">
                 <button id="languageToggle" class="toggle-btn"></button>
                 <div id="languageDropdown" class="dropdown">
-                    <div class="dropdown-option language-option" data-lang="zh-TW">
-                        <span class="language-icon zh-TW"></span>繁體中文
-                    </div>
-                    <div class="dropdown-option language-option" data-lang="en">
-                        <span class="language-icon en"></span>English
-                    </div>
+                    <div class="dropdown-option language-option" data-lang="zh-TW"><span class="language-icon zh-TW"></span>繁體中文</div>
+                    <div class="dropdown-option language-option" data-lang="en"><span class="language-icon en"></span>English</div>
                 </div>
             </div>
         </div>
@@ -558,93 +224,46 @@
             <button id="predictBtn" class="btn btn-success">🔍 辨識食物</button>
             <button id="restartStreamBtn" class="btn btn-info d-none">🔄 重新辨識</button>
         </div>
-        <div id="loading" class="spinner-border text-success mt-3 d-none" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
+        <div id="loading" class="spinner-border text-success mt-3 d-none" role="status"><span class="visually-hidden">Loading...</span></div>
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mt-4 text-secondary" id="historyTitleText">📜 歷史紀錄</h5>
-            <button id="toggleDeleteMode" class="btn btn-warning btn-sm" title="刪除模式">
-                <i class="bi bi-trash"></i>
-            </button>
+            <button id="toggleDeleteMode" class="btn btn-warning btn-sm" title="刪除模式"><i class="bi bi-trash"></i></button>
         </div>
         <button id="selectAll" class="btn btn-secondary btn-sm mb-3 d-none">全選</button>
         <button id="confirmDelete" class="btn btn-danger btn-sm mb-3 d-none">確認刪除</button>
         <input type="text" id="historySearch" class="form-control mb-2" placeholder="搜尋食物名稱">
         <div id="historyArea" class="mt-2"></div>
     </div>
+    <div class="card mt-4" id="foodListArea"></div>
 </div>
 
 <script>
 const translations = {
     "zh-TW": {
-        "title": "YOLOv8 食物辨識系統",
-        "uploadLabel": "選擇食物圖片：",
-        "predictBtn": "🔍 辨識食物",
-        "startStreamBtn": "開啟相機",
-        "stopStreamBtn": "關閉相機",
-        "restartStreamBtn": "🔄 重新辨識",
-        "historyTitle": "📜 歷史紀錄",
-        "searchPlaceholder": "搜尋食物名稱",
-        "food_name": "🥘 食物名稱",
-        "portion": "🍽️ 份量",
-        "serving_size": "🍽️ 份量 (g)",
-        "calories": "🔥 熱量",
-        "protein": "💪 蛋白質",
-        "total_carbohydrate": "🍞 總碳水化合物",
-        "total_fat": "🥑 總脂肪",
-        "dietary_fiber": "🌾 膳食纖維",
-        "price": "💰 價格",
-        "confidence": "🎯 信心度",
-        "noFood": "⚠️ 未偵測到食物！",
-        "error": "❌ 錯誤",
-        "imageLoadError": "⚠️ 圖片載入失敗",
-        "unknown": "未知",
-        "themeToggle": "主題",
-        "languageToggle": "語言",
-        "lightTheme": "白色",
-        "darkTheme": "黑色",
-        "previewPlaceholder": "請上傳圖片以預覽",
-        "basicInfo": "基本資訊",
-        "nutritionInfo": "營養成分",
-        "otherInfo": "其他資訊",
-        "toggleCameraFront": "切換至前鏡頭",
-        "toggleCameraBack": "切換至後鏡頭",
-        "requestAborted": "請求已中止，請重新嘗試"
+        "title": "YOLOv8 食物辨識系統", "uploadLabel": "選擇食物圖片：", "predictBtn": "🔍 辨識食物",
+        "startStreamBtn": "開啟相機", "stopStreamBtn": "關閉相機", "restartStreamBtn": "🔄 重新辨識",
+        "historyTitle": "📜 歷史紀錄", "searchPlaceholder": "搜尋食物名稱", "food_name": "🥘 食物名稱",
+        "portion": "🍽️ 份量", "serving_size": "🍽️ 份量 (g)", "calories": "🔥 熱量",
+        "protein": "💪 蛋白質", "carbohydrate": "🍞 碳水化合物", "fat": "🥑 脂肪",
+        "dietary_fiber": "🌾 膳食纖維", "price": "💰 價格", "confidence": "🎯 信心度",
+        "noFood": "⚠️ 未偵測到食物！", "error": "❌ 錯誤", "imageLoadError": "⚠️ 圖片載入失敗",
+        "unknown": "未知", "themeToggle": "主題", "languageToggle": "語言", "lightTheme": "白色",
+        "darkTheme": "黑色", "previewPlaceholder": "請上傳圖片以預覽", "basicInfo": "基本資訊",
+        "nutritionInfo": "營養成分", "otherInfo": "其他資訊", "toggleCameraFront": "切換至前鏡頭",
+        "toggleCameraBack": "切換至後鏡頭", "requestAborted": "請求已中止，請重新嘗試"
     },
     "en": {
-        "title": "YOLOv8 Food Recognition System",
-        "uploadLabel": "Select Food Image:",
-        "predictBtn": "🔍 Recognize Food",
-        "startStreamBtn": "Open Camera",
-        "stopStreamBtn": "Close Camera",
-        "restartStreamBtn": "🔄 Restart Recognition",
-        "historyTitle": "📜 History",
-        "searchPlaceholder": "Search Food Name",
-        "food_name": "🥘 Food Name",
-        "portion": "🍽️ Serving Size",
-        "serving_size": "🍽️ Serving Size (g)",
-        "calories": "🔥 Calories",
-        "protein": "💪 Protein",
-        "total_carbohydrate": "🍞 Total Carbohydrates",
-        "total_fat": "🥑 Total Fat",
-        "dietary_fiber": "🌾 Dietary Fiber",
-        "price": "💰 Price",
-        "confidence": "🎯 Confidence",
-        "noFood": "⚠️ No Food Detected!",
-        "error": "❌ Error",
-        "imageLoadError": "⚠️ Failed to Load Image",
-        "unknown": "Unknown",
-        "themeToggle": "Theme",
-        "languageToggle": "Language",
-        "lightTheme": "Light",
-        "darkTheme": "Dark",
-        "previewPlaceholder": "Please upload an image to preview",
-        "basicInfo": "Basic Info",
-        "nutritionInfo": "Nutrition Info",
-        "otherInfo": "Other Info",
-        "toggleCameraFront": "Switch to Front Camera",
-        "toggleCameraBack": "Switch to Back Camera",
-        "requestAborted": "Request aborted, please try again"
+        "title": "YOLOv8 Food Recognition System", "uploadLabel": "Select Food Image:", "predictBtn": "🔍 Recognize Food",
+        "startStreamBtn": "Open Camera", "stopStreamBtn": "Close Camera", "restartStreamBtn": "🔄 Restart Recognition",
+        "historyTitle": "📜 History", "searchPlaceholder": "Search Food Name", "food_name": "🥘 Food Name",
+        "portion": "🍽️ Serving Size", "serving_size": "🍽️ Serving Size (g)", "calories": "🔥 Calories",
+        "protein": "💪 Protein", "carbohydrate": "🍞 Carbohydrates", "fat": "🥑 Fat",
+        "dietary_fiber": "🌾 Dietary Fiber", "price": "💰 Price", "confidence": "🎯 Confidence",
+        "noFood": "⚠️ No Food Detected!", "error": "❌ Error", "imageLoadError": "⚠️ Failed to Load Image",
+        "unknown": "Unknown", "themeToggle": "Theme", "languageToggle": "Language", "lightTheme": "Light",
+        "darkTheme": "Dark", "previewPlaceholder": "Please upload an image to preview", "basicInfo": "Basic Info",
+        "nutritionInfo": "Nutrition Info", "otherInfo": "Other Info", "toggleCameraFront": "Switch to Front Camera",
+        "toggleCameraBack": "Switch to Back Camera", "requestAborted": "Request aborted, please try again"
     }
 };
 
@@ -658,30 +277,32 @@ let currentFacingMode = "environment";
 let isDetecting = false;
 let detectionInterval = null;
 let stream = null;
-let abortController = null;
+let lastDetections = null;
+let lastRecordTime = 0;
+let lastNutritionUpdate = null;
+const MIN_RECORD_INTERVAL = 5000;
+
+const foodList = [
+    { label: "Over-easy egg", food_name: "半熟太陽蛋" }, { label: "bawan", food_name: "肉圓" }, { label: "beef_noodles", food_name: "牛肉麵" },
+    { label: "braised_napa_cabbage", food_name: "滷白菜" }, { label: "braised_pork_over_rice", food_name: "滷肉飯" },
+    { label: "chicken_mushroom_soup", food_name: "香菇雞湯" }, { label: "chinese_pickled_cucumber", food_name: "涼拌小黃瓜" },
+    { label: "cold_noodle", food_name: "芝麻醬涼麵" }, { label: "deep-fried_chicken_cutlets", food_name: "炸雞排" },
+    { label: "egg_pancake_roll", food_name: "蛋餅" }, { label: "fried-spanish_mackerel_thick_soup", food_name: "土魠魚羹麵" },
+    { label: "fried_instant_noodles", food_name: "炒泡麵" }, { label: "fried_rice_noodles", food_name: "炒米粉" },
+    { label: "loofah", food_name: "炒絲瓜" }, { label: "turkey_rice", food_name: "火雞肉飯" }
+];
 
 const elements = {
-    title: document.getElementById("title"),
-    uploadLabel: document.getElementById("uploadLabel"),
-    predictBtn: document.getElementById("predictBtn"),
-    startStreamBtn: document.getElementById("startStreamBtn"),
-    stopStreamBtn: document.getElementById("stopStreamBtn"),
-    restartStreamBtn: document.getElementById("restartStreamBtn"),
-    toggleCameraBtn: document.getElementById("toggleCameraBtn"),
-    historyTitleText: document.getElementById("historyTitleText"),
-    historySearch: document.getElementById("historySearch"),
-    themeToggle: document.getElementById("themeToggle"),
-    languageToggle: document.getElementById("languageToggle"),
-    toggleDeleteMode: document.getElementById("toggleDeleteMode"),
-    confirmDelete: document.getElementById("confirmDelete"),
-    selectAll: document.getElementById("selectAll"),
-    previewImg: document.getElementById("previewImg"),
-    resultArea: document.getElementById("resultArea"),
-    videoStream: document.getElementById("videoStream"),
-    historyArea: document.getElementById("historyArea"),
-    loading: document.getElementById("loading"),
-    overlayCanvas: document.getElementById("overlayCanvas"),
-    previewOverlayCanvas: document.getElementById("previewOverlayCanvas")
+    title: document.getElementById("title"), uploadLabel: document.getElementById("uploadLabel"),
+    predictBtn: document.getElementById("predictBtn"), startStreamBtn: document.getElementById("startStreamBtn"),
+    stopStreamBtn: document.getElementById("stopStreamBtn"), restartStreamBtn: document.getElementById("restartStreamBtn"), toggleCameraBtn: document.getElementById("toggleCameraBtn"),
+    historyTitleText: document.getElementById("historyTitleText"), historySearch: document.getElementById("historySearch"),
+    themeToggle: document.getElementById("themeToggle"), languageToggle: document.getElementById("languageToggle"),
+    toggleDeleteMode: document.getElementById("toggleDeleteMode"), confirmDelete: document.getElementById("confirmDelete"),
+    selectAll: document.getElementById("selectAll"), previewImg: document.getElementById("previewImg"),
+    resultArea: document.getElementById("resultArea"), videoStream: document.getElementById("videoStream"),
+    historyArea: document.getElementById("historyArea"), loading: document.getElementById("loading"),
+    overlayCanvas: document.getElementById("overlayCanvas"), previewOverlayCanvas: document.getElementById("previewOverlayCanvas")
 };
 
 function updateText() {
@@ -710,6 +331,7 @@ function updateTheme() {
     document.body.classList.toggle("dark-mode", currentTheme === "dark");
     if (nutritionChart) {
         nutritionChart.options.plugins.legend.labels.color = currentTheme === "dark" ? "#f5f5f7" : "#1d1d1f";
+        nutritionChart.options.plugins.title.color = currentTheme === "dark" ? "#f5f5f7" : "#1d1d1f";
         nutritionChart.update();
     }
 }
@@ -717,16 +339,15 @@ function updateTheme() {
 function updateUI() {
     updateText();
     updateTheme();
-    // 修復：語言切換時重新渲染食物營養內容與歷史紀錄
+    renderFoodList();
     if (elements.resultArea.dataset.detections) {
         const data = JSON.parse(elements.resultArea.dataset.detections);
         const detectionsHtml = data.detections.map(d => renderDetection(d, portionValues[d.food_name] || 1)).join('');
         elements.resultArea.innerHTML = `
             <div class="nutrition-info">
+                ${renderNutritionSelector(data.detections)}
                 ${detectionsHtml}
-                <div class="chart-container">
-                    <canvas id="nutritionChart"></canvas>
-                </div>
+                <div class="chart-container"><canvas id="nutritionChart"></canvas></div>
             </div>
         `;
         renderChart(data.detections);
@@ -797,22 +418,10 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
     const scaleX = canvasWidth / targetWidth;
     const scaleY = canvasHeight / targetHeight;
 
-    if (!detections || !Array.isArray(detections)) {
-        console.error("detections 格式錯誤：", detections);
-        // 模擬數據以測試前端繪製
-        detections = [{
-            food_name: "Test Food",
-            label: "test_food",
-            confidence: 0.95,
-            boxes: [100, 100, 300, 300]
-        }];
-    }
+    if (!detections || !Array.isArray(detections)) return;
 
     detections.forEach(d => {
-        if (!d.boxes || !Array.isArray(d.boxes) || d.boxes.length !== 4) {
-            console.error("boxes 格式錯誤：", d.boxes);
-            return;
-        }
+        if (!d.boxes || d.boxes.length !== 4) return;
         const box = d.boxes;
         const x = box[0] * scaleX;
         const y = box[1] * scaleY;
@@ -842,8 +451,8 @@ function renderDetection(detection, multiplier = 1) {
         serving_size: detection.serving_size && !isNaN(detection.serving_size) ? (detection.serving_size * multiplier).toFixed(1) : "N/A",
         calories: detection.calories && !isNaN(detection.calories) ? (detection.calories * multiplier).toFixed(2) : "N/A",
         protein: detection.protein && !isNaN(detection.protein) ? (detection.protein * multiplier).toFixed(1) : "N/A",
-        total_carbohydrate: detection.total_carbohydrate && !isNaN(detection.total_carbohydrate) ? (detection.total_carbohydrate * multiplier).toFixed(1) : "N/A",
-        total_fat: detection.total_fat && !isNaN(detection.total_fat) ? (detection.total_fat * multiplier).toFixed(1) : "N/A",
+        carbohydrate: detection.total_carbohydrate && !isNaN(detection.total_carbohydrate) ? (detection.total_carbohydrate * multiplier).toFixed(1) : "N/A",
+        fat: detection.total_fat && !isNaN(detection.total_fat) ? (detection.total_fat * multiplier).toFixed(1) : "N/A",
         dietary_fiber: detection.dietary_fiber && !isNaN(detection.dietary_fiber) ? (detection.dietary_fiber * multiplier).toFixed(1) : "N/A",
         price: detection.price && !isNaN(detection.price) ? (detection.price * multiplier).toFixed(0) : "N/A",
         confidence: (detection.confidence * 100).toFixed(2)
@@ -875,31 +484,27 @@ function renderDetection(detection, multiplier = 1) {
             <span class="label">${t.serving_size}</span>
             <span class="value">${values.serving_size}<span class="unit-text">${values.serving_size !== "N/A" ? " g" : ""}</span></span>
         </div>
-
         <div class="nutrition-group">${t.nutritionInfo}</div>
         <div class="info-item">
             <span class="label">${t.calories}</span>
-            <span class="value">
-                <span class="calories-wrapper" for="calories">${values.calories}<span class="unit-text">${values.calories !== "N/A" ? " kcal" : ""}</span></span>
-            </span>
+            <span class="value"><span class="calories-wrapper" for="calories">${values.calories}<span class="unit-text">${values.calories !== "N/A" ? " kcal" : ""}</span></span></span>
         </div>
         <div class="info-item">
             <span class="label">${t.protein}</span>
             <span class="value">${values.protein}<span class="unit-text">${values.protein !== "N/A" ? " g" : ""}</span></span>
         </div>
         <div class="info-item">
-            <span class="label">${t.total_carbohydrate}</span>
-            <span class="value">${values.total_carbohydrate}<span class="unit-text">${values.total_carbohydrate !== "N/A" ? " g" : ""}</span></span>
+            <span class="label">${t.carbohydrate}</span>
+            <span class="value">${values.carbohydrate}<span class="unit-text">${values.carbohydrate !== "N/A" ? " g" : ""}</span></span>
         </div>
         <div class="info-item">
-            <span class="label">${t.total_fat}</span>
-            <span class="value">${values.total_fat}<span class="unit-text">${values.total_fat !== "N/A" ? " g" : ""}</span></span>
+            <span class="label">${t.fat}</span>
+            <span class="value">${values.fat}<span class="unit-text">${values.fat !== "N/A" ? " g" : ""}</span></span>
         </div>
         <div class="info-item">
             <span class="label">${t.dietary_fiber}</span>
             <span class="value">${values.dietary_fiber}<span class="unit-text">${values.dietary_fiber !== "N/A" ? " g" : ""}</span></span>
         </div>
-
         <div class="nutrition-group">${t.otherInfo}</div>
         <div class="info-item">
             <span class="label">${t.price}</span>
@@ -922,71 +527,58 @@ function adjustPortion(button, foodName, change) {
     updatePortion(input, foodName);
 }
 
+function renderNutritionSelector(detections) {
+    return `
+        <select id="nutritionSelector" class="form-select mb-3" onchange="updateChart(this.value)">
+            <option value="all">${translations[currentLang].title} - 所有食物總覽</option>
+            ${detections.map(d => `<option value="${d.food_name}">${currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : d.food_name}</option>`).join('')}
+        </select>
+    `;
+}
+
 function renderChart(detections) {
     const total = detections.reduce((acc, d) => {
         const m = parseFloat(document.querySelector(`input[data-food-name="${d.food_name}"]`)?.value || 1);
         return {
-            calories: acc.calories + (d.calories && !isNaN(d.calories) ? parseFloat(d.calories) * m : 0),
-            protein: acc.protein + (d.protein && !isNaN(d.protein) ? parseFloat(d.protein) * m : 0),
-            total_carbohydrate: acc.total_carbohydrate + (d.total_carbohydrate && !isNaN(d.total_carbohydrate) ? parseFloat(d.total_carbohydrate) * m : 0),
-            total_fat: acc.total_fat + (d.total_fat && !isNaN(d.total_fat) ? parseFloat(d.total_fat) * m : 0),
-            dietary_fiber: acc.dietary_fiber + (d.dietary_fiber && !isNaN(d.dietary_fiber) ? parseFloat(d.dietary_fiber) * m : 0)
+            protein: acc.protein + (d.protein || 0) * m,
+            carbohydrate: acc.carbohydrate + (d.total_carbohydrate || 0) * m,
+            fat: acc.fat + (d.total_fat || 0) * m,
+            dietary_fiber: acc.dietary_fiber + (d.dietary_fiber || 0) * m
         };
-    }, { calories: 0, protein: 0, total_carbohydrate: 0, total_fat: 0, dietary_fiber: 0 });
+    }, { protein: 0, carbohydrate: 0, fat: 0, dietary_fiber: 0 });
 
     const ctx = document.getElementById('nutritionChart')?.getContext('2d');
     if (ctx) {
         if (nutritionChart) nutritionChart.destroy();
-        const dataValues = [total.calories, total.protein, total.total_carbohydrate, total.total_fat, total.dietary_fiber];
+        const dataValues = [total.protein, total.carbohydrate, total.fat, total.dietary_fiber];
         if (dataValues.every(val => val === 0)) return;
         nutritionChart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: [translations[currentLang].calories, translations[currentLang].protein, 
-                         translations[currentLang].total_carbohydrate, translations[currentLang].total_fat, 
-                         translations[currentLang].dietary_fiber],
-                datasets: [{
-                    data: dataValues,
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
-                }]
+                labels: [translations[currentLang].protein, translations[currentLang].carbohydrate, translations[currentLang].fat, translations[currentLang].dietary_fiber],
+                datasets: [{ data: dataValues, backgroundColor: ['#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }]
             },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: true,
+            options: {
+                responsive: true,
                 plugins: {
-                    legend: { 
-                        position: 'bottom',
-                        labels: { 
-                            boxWidth: 15, 
-                            font: { size: 14 },
-                            color: currentTheme === "dark" ? "#f5f5f7" : "#1d1d1f"
-                        } 
-                    },
-                    tooltip: {
-                        enabled: true,
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                if (label === translations[currentLang].calories) {
-                                    return `${label}: ${value.toFixed(2)} kcal`;
-                                } else {
-                                    return `${label}: ${value.toFixed(1)} g`;
-                                }
-                            }
-                        }
-                    }
+                    title: { display: true, text: translations[currentLang].nutritionInfo + '（總量）', color: currentTheme === "dark" ? "#f5f5f7" : "#1d1d1f" },
+                    legend: { position: 'bottom', labels: { boxWidth: 15, font: { size: 14 }, color: currentTheme === "dark" ? "#f5f5f7" : "#1d1d1f" } },
+                    tooltip: { callbacks: { label: context => `${context.label}: ${context.raw.toFixed(1)} g` } }
                 }
             }
         });
     }
 }
 
+function updateChart(selectedFood) {
+    const data = JSON.parse(elements.resultArea.dataset.detections);
+    const filteredDetections = selectedFood === "all" ? data.detections : data.detections.filter(d => d.food_name === selectedFood);
+    renderChart(filteredDetections);
+}
+
 function updatePortion(input, foodName) {
     let multiplier = parseFloat(input.value);
-    if (isNaN(multiplier) || multiplier < 0.5) {
-        multiplier = 0.5;
-    }
+    if (isNaN(multiplier) || multiplier < 0.5) multiplier = 0.5;
     input.value = multiplier;
     portionValues[foodName] = multiplier;
     const currentData = JSON.parse(elements.resultArea.dataset.detections);
@@ -995,10 +587,9 @@ function updatePortion(input, foodName) {
     ).join('');
     elements.resultArea.innerHTML = `
         <div class="nutrition-info">
+            ${renderNutritionSelector(currentData.detections)}
             ${updatedHtml}
-            <div class="chart-container">
-                <canvas id="nutritionChart"></canvas>
-            </div>
+            <div class="chart-container"><canvas id="nutritionChart"></canvas></div>
         </div>
     `;
     const updatedElements = elements.resultArea.querySelectorAll('.value');
@@ -1016,12 +607,7 @@ async function predictImage() {
     formData.append("image", fileInput.files[0]);
     elements.loading.classList.remove("d-none");
     try {
-        const response = await fetch("https://food-backend-1oar.onrender.com/predict", {
-            method: "POST",
-            body: formData,
-            mode: "cors",
-            signal: AbortSignal.timeout(10000)
-        });
+        const response = await fetch("https://food-backend-1oar.onrender.com/predict", { method: "POST", body: formData, mode: "cors", signal: AbortSignal.timeout(10000) });
         if (!response.ok) throw new Error(`伺服器錯誤：${response.statusText}`);
         const data = await response.json();
         if (!data.detections || data.detections.length === 0) {
@@ -1034,10 +620,9 @@ async function predictImage() {
         const detectionsHtml = data.detections.map(d => renderDetection(d)).join('');
         elements.resultArea.innerHTML = `
             <div class="nutrition-info">
+                ${renderNutritionSelector(data.detections)}
                 ${detectionsHtml}
-                <div class="chart-container">
-                    <canvas id="nutritionChart"></canvas>
-                </div>
+                <div class="chart-container"><canvas id="nutritionChart"></canvas></div>
             </div>
         `;
         elements.resultArea.dataset.detections = JSON.stringify(data);
@@ -1047,11 +632,7 @@ async function predictImage() {
             elements.previewOverlayCanvas.height = elements.previewImg.offsetHeight;
             drawBoundingBoxes(data.detections, elements.previewOverlayCanvas, elements.previewImg);
         };
-        const record = {
-            timestamp: new Date().toLocaleString(),
-            detections: data.detections,
-            image_url: data.image_url
-        };
+        const record = { timestamp: new Date().toLocaleString(), detections: data.detections, image_url: data.image_url };
         historyRecords.push(record);
         localStorage.setItem('foodHistory', JSON.stringify(historyRecords));
         updateHistoryUI();
@@ -1062,6 +643,13 @@ async function predictImage() {
     } finally {
         elements.loading.classList.add("d-none");
     }
+}
+
+function renderFoodList() {
+    const foodListHtml = foodList.map(food => `
+        <li>${currentLang === "en" ? food.label.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : food.food_name}</li>
+    `).join('');
+    document.getElementById("foodListArea").innerHTML = `<h5>${translations[currentLang].title} 可辨識食物</h5><ul>${foodListHtml}</ul>`;
 }
 
 function updateHistoryUI() {
@@ -1081,10 +669,9 @@ function showHistoryDetail(index) {
     const detectionsHtml = record.detections.map(d => renderDetection(d, portionValues[d.food_name] || 1)).join('');
     elements.resultArea.innerHTML = `
         <div class="nutrition-info">
+            ${renderNutritionSelector(record.detections)}
             ${detectionsHtml}
-            <div class="chart-container">
-                <canvas id="nutritionChart"></canvas>
-            </div>
+            <div class="chart-container"><canvas id="nutritionChart"></canvas></div>
         </div>
     `;
     elements.videoStream.style.display = "none";
@@ -1173,19 +760,13 @@ elements.historyArea.addEventListener("click", (e) => {
 document.getElementById("file").addEventListener("change", previewFile);
 
 let canvas = document.createElement("canvas");
-let overlayCtx = elements.overlayCanvas.getContext("2d");
-let lastDetections = null;
-let lastRecordTime = 0;
-const MIN_RECORD_INTERVAL = 5000;
 
 async function startCamera() {
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
     }
     try {
-        stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: currentFacingMode } 
-        });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } });
         elements.videoStream.srcObject = stream;
         elements.videoStream.play();
         elements.startStreamBtn.classList.add("d-none");
@@ -1211,11 +792,25 @@ async function startCamera() {
 async function startDetection() {
     if (isDetecting) return;
     isDetecting = true;
+    let lastRequestTime = 0;
+    const DETECTION_INTERVAL = 2000;
+
+    function drawLiveOverlay() {
+        if (lastDetections) {
+            drawBoundingBoxes(lastDetections, elements.overlayCanvas, elements.videoStream, canvas);
+        }
+        if (isDetecting) requestAnimationFrame(drawLiveOverlay);
+    }
+    requestAnimationFrame(drawLiveOverlay);
+
     detectionInterval = setInterval(async () => {
         if (!isDetecting) {
             clearInterval(detectionInterval);
             return;
         }
+        const currentTime = Date.now();
+        if (currentTime - lastRequestTime < DETECTION_INTERVAL) return;
+        lastRequestTime = currentTime;
 
         canvas.getContext("2d").drawImage(elements.videoStream, 0, 0, canvas.width, canvas.height);
         const imageDataUrl = canvas.toDataURL("image/jpeg");
@@ -1224,73 +819,43 @@ async function startDetection() {
         formData.append("image", blob, "frame.jpg");
         elements.loading.classList.remove("d-none");
 
-        abortController = new AbortController();
         try {
-            const response = await fetch("https://food-backend-1oar.onrender.com/predict", {
-                method: "POST",
-                body: formData,
-                mode: "cors",
-                signal: abortController.signal
-            });
+            const response = await fetch("https://food-backend-1oar.onrender.com/predict", { method: "POST", body: formData, mode: "cors" });
             if (!response.ok) throw new Error(`伺服器錯誤：${await response.text()}`);
             const data = await response.json();
-            if (!data.detections || data.detections.length === 0) {
+            lastDetections = data.detections || [];
+            if (!lastDetections.length) {
                 elements.resultArea.innerHTML = `<div class="alert alert-warning">${translations[currentLang].noFood}</div>`;
-                overlayCtx.clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
-                lastDetections = null;
                 return;
             }
-            drawBoundingBoxes(data.detections, elements.overlayCanvas, elements.videoStream, canvas);
-            const detectionsHtml = data.detections.map(d => renderDetection(d)).join('');
-            elements.resultArea.innerHTML = `
-                <div class="nutrition-info">
-                    ${detectionsHtml}
-                    <div class="chart-container">
-                        <canvas id="nutritionChart"></canvas>
+            const currentDetectionsStr = lastDetections.map(d => d.food_name || d.label).sort().join(',');
+            if (!lastNutritionUpdate || currentDetectionsStr !== lastNutritionUpdate) {
+                const detectionsHtml = lastDetections.map(d => renderDetection(d)).join('');
+                elements.resultArea.innerHTML = `
+                    <div class="nutrition-info">
+                        ${renderNutritionSelector(lastDetections)}
+                        ${detectionsHtml}
+                        <div class="chart-container"><canvas id="nutritionChart"></canvas></div>
                     </div>
-                </div>
-            `;
-            elements.resultArea.dataset.detections = JSON.stringify(data);
-            renderChart(data.detections);
-            const currentTime = Date.now();
-            const currentDetections = data.detections.map(d => d.food_name || d.label).sort().join(',');
-            const lastDetectionsStr = lastDetections ? lastDetections.map(d => d.food_name || d.label).sort().join(',') : '';
-            const isSameDetection = currentDetections === lastDetectionsStr;
-            if (!isSameDetection || (currentTime - lastRecordTime) >= MIN_RECORD_INTERVAL) {
-                const record = {
-                    timestamp: new Date().toLocaleString(),
-                    detections: data.detections,
-                    image_url: imageDataUrl
-                };
+                `;
+                elements.resultArea.dataset.detections = JSON.stringify({ detections: lastDetections });
+                renderChart(lastDetections);
+                lastNutritionUpdate = currentDetectionsStr;
+            }
+            if (currentTime - lastRecordTime >= MIN_RECORD_INTERVAL) {
+                const record = { timestamp: new Date().toLocaleString(), detections: lastDetections, image_url: imageDataUrl };
                 historyRecords.push(record);
                 localStorage.setItem('foodHistory', JSON.stringify(historyRecords));
                 updateHistoryUI();
-                lastDetections = data.detections;
                 lastRecordTime = currentTime;
-                isDetecting = false;
-                clearInterval(detectionInterval);
-                elements.restartStreamBtn.classList.remove("d-none");
-                elements.videoStream.style.display = "none";
-                elements.previewImg.src = imageDataUrl;
-                elements.previewImg.style.display = "block";
-                elements.previewImg.onload = () => {
-                    elements.previewOverlayCanvas.width = elements.previewImg.offsetWidth;
-                    elements.previewOverlayCanvas.height = elements.previewImg.offsetHeight;
-                    drawBoundingBoxes(data.detections, elements.previewOverlayCanvas, elements.previewImg, canvas);
-                };
             }
         } catch (err) {
-            if (err.name === "AbortError") {
-                elements.resultArea.innerHTML = `<div class="alert alert-warning">${translations[currentLang].requestAborted}</div>`;
-            } else {
-                elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：${err.message}</div>`;
-            }
+            elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：${err.message}</div>`;
             console.error("錯誤:", err);
         } finally {
             elements.loading.classList.add("d-none");
-            abortController = null;
         }
-    }, 1000);
+    }, 100);
 }
 
 elements.startStreamBtn.addEventListener("click", startCamera);
@@ -1305,10 +870,6 @@ elements.toggleCameraBtn.addEventListener("click", () => {
 });
 
 elements.restartStreamBtn.addEventListener("click", () => {
-    if (abortController) {
-        abortController.abort();
-        abortController = null;
-    }
     elements.videoStream.style.display = "block";
     elements.previewImg.style.display = "none";
     elements.previewOverlayCanvas.getContext("2d").clearRect(0, 0, elements.previewOverlayCanvas.width, elements.previewOverlayCanvas.height);
@@ -1324,12 +885,8 @@ elements.stopStreamBtn.addEventListener("click", () => {
         stream = null;
         elements.videoStream.srcObject = null;
         isDetecting = false;
-        if (abortController) {
-            abortController.abort();
-            abortController = null;
-        }
         clearInterval(detectionInterval);
-        overlayCtx.clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
+        elements.overlayCanvas.getContext("2d").clearRect(0, 0, elements.overlayCanvas.width, elements.overlayCanvas.height);
         elements.previewOverlayCanvas.getContext("2d").clearRect(0, 0, elements.previewOverlayCanvas.width, elements.previewOverlayCanvas.height);
         elements.startStreamBtn.classList.remove("d-none");
         elements.stopStreamBtn.classList.add("d-none");
@@ -1351,9 +908,5 @@ document.addEventListener("keydown", (e) => {
     }
 });
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925f9a009b2f4594',t:'MTc0MjkxODIyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925fb1145cb8bf6d',t:'MTc0MjkxOTE2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925fc12c9de37221',t:'MTc0MjkxOTgyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'925fd1168e8944ef',t:'MTc0MjkyMDQ3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
