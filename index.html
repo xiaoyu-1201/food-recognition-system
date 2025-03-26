@@ -159,6 +159,23 @@
         .dark-mode .portion-input-btn:hover { background-color: #5a5a5c; }
         .portion-input-btn i { font-size: 14px; color: #666; }
         .dark-mode .portion-input-btn i { color: #d1d1d6; }
+        @media (min-width: 992px) {
+            #mainContent {
+                flex-direction: row;
+                justify-content: space-between;
+                gap: 20px;
+            }
+            #imageArea {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+            #resultArea {
+                flex: 0 0 45%;
+                max-width: 45%;
+                max-height: 600px;
+                overflow-y: auto;
+            }
+        }
         @media (max-width: 992px) {
             #imageArea, #resultArea { max-width: 500px; width: 100%; align-self: center; }
             #imageArea { min-height: 300px; padding: 0; }
@@ -179,6 +196,28 @@
             .portion-input { width: 40px; }
             .portion-input-btn { width: 24px; height: 24px; }
             .portion-input-btn i { font-size: 12px; }
+            #mainContent {
+                position: relative;
+            }
+            #imageArea {
+                position: relative;
+                width: 100%;
+                min-height: 60vh;
+            }
+            #resultArea {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                max-height: 40vh;
+                overflow-y: auto;
+                background: rgba(245, 245, 247, 0.9);
+                padding: 10px;
+                z-index: 20;
+            }
+            .dark-mode #resultArea {
+                background: rgba(29, 29, 31, 0.9);
+            }
         }
     </style>
 </head>
@@ -250,7 +289,8 @@ const translations = {
         "unknown": "未知", "themeToggle": "主題", "languageToggle": "語言", "lightTheme": "白色",
         "darkTheme": "黑色", "previewPlaceholder": "請上傳圖片以預覽", "basicInfo": "基本資訊",
         "nutritionInfo": "營養成分", "otherInfo": "其他資訊", "toggleCameraFront": "切換至前鏡頭",
-        "toggleCameraBack": "切換至後鏡頭", "requestAborted": "請求已中止，請重新嘗試"
+        "toggleCameraBack": "切換至後鏡頭", "requestAborted": "請求已中止，請重新嘗試",
+        "foodListTitle": "可辨識食物項目"
     },
     "en": {
         "title": "YOLOv8 Food Recognition System", "uploadLabel": "Select Food Image:", "predictBtn": "🔍 Recognize Food",
@@ -263,7 +303,8 @@ const translations = {
         "unknown": "Unknown", "themeToggle": "Theme", "languageToggle": "Language", "lightTheme": "Light",
         "darkTheme": "Dark", "previewPlaceholder": "Please upload an image to preview", "basicInfo": "Basic Info",
         "nutritionInfo": "Nutrition Info", "otherInfo": "Other Info", "toggleCameraFront": "Switch to Front Camera",
-        "toggleCameraBack": "Switch to Back Camera", "requestAborted": "Request aborted, please try again"
+        "toggleCameraBack": "Switch to Back Camera", "requestAborted": "Request aborted, please try again",
+        "foodListTitle": "Recognizable Food Items"
     }
 };
 
@@ -407,38 +448,31 @@ function previewFile() {
 function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = null) {
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.width = targetElement.offsetWidth;
+    canvas.height = targetElement.offsetHeight;
 
-    const canvasWidth = targetElement.offsetWidth;
-    const canvasHeight = targetElement.offsetHeight;
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-
-    const targetWidth = sourceCanvas ? sourceCanvas.width : (targetElement.naturalWidth || targetElement.videoWidth || canvasWidth);
-    const targetHeight = sourceCanvas ? sourceCanvas.height : (targetElement.naturalHeight || targetElement.videoHeight || canvasHeight);
-    const scaleX = canvasWidth / targetWidth;
-    const scaleY = canvasHeight / targetHeight;
+    const targetWidth = sourceCanvas ? sourceCanvas.width : targetElement.videoWidth || targetElement.width;
+    const targetHeight = sourceCanvas ? sourceCanvas.height : targetElement.videoHeight || targetElement.height;
+    const scaleX = canvas.width / targetWidth;
+    const scaleY = canvas.height / targetHeight;
 
     if (!detections || !Array.isArray(detections)) return;
 
     detections.forEach(d => {
         if (!d.boxes || d.boxes.length !== 4) return;
-        const box = d.boxes;
-        const x = box[0] * scaleX;
-        const y = box[1] * scaleY;
-        const width = (box[2] - box[0]) * scaleX;
-        const height = (box[3] - box[1]) * scaleY;
+        const [x, y, x2, y2] = d.boxes;
+        const width = (x2 - x) * scaleX;
+        const height = (y2 - y) * scaleY;
         ctx.strokeStyle = "#00FF00";
         ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, width, height);
-        const foodName = currentLang === "en" 
-            ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) 
-            : (d.food_name || d.label);
+        ctx.strokeRect(x * scaleX, y * scaleY, width, height);
+        const foodName = currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : (d.food_name || d.label);
         const confidence = (d.confidence * 100).toFixed(2);
         ctx.font = "16px Arial";
         ctx.fillStyle = "#00FF00";
-        ctx.fillRect(x, y - 25, ctx.measureText(`${foodName} (${confidence}%)`).width + 10, 20);
+        ctx.fillRect(x * scaleX, y * scaleY - 25, ctx.measureText(`${foodName} (${confidence}%)`).width + 10, 20);
         ctx.fillStyle = "#ffffff";
-        ctx.fillText(`${foodName} (${confidence}%)`, x + 5, y - 10);
+        ctx.fillText(`${foodName} (${confidence}%)`, x * scaleX + 5, y * scaleY - 10);
     });
 }
 
@@ -530,7 +564,7 @@ function adjustPortion(button, foodName, change) {
 function renderNutritionSelector(detections) {
     return `
         <select id="nutritionSelector" class="form-select mb-3" onchange="updateChart(this.value)">
-            <option value="all">${translations[currentLang].title} - 所有食物總覽</option>
+            <option value="all">${translations[currentLang].title} - ${currentLang === "en" ? "All Foods Overview" : "所有食物總覽"}</option>
             ${detections.map(d => `<option value="${d.food_name}">${currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : d.food_name}</option>`).join('')}
         </select>
     `;
@@ -649,7 +683,7 @@ function renderFoodList() {
     const foodListHtml = foodList.map(food => `
         <li>${currentLang === "en" ? food.label.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : food.food_name}</li>
     `).join('');
-    document.getElementById("foodListArea").innerHTML = `<h5>${translations[currentLang].title} 可辨識食物</h5><ul>${foodListHtml}</ul>`;
+    document.getElementById("foodListArea").innerHTML = `<h5>${translations[currentLang].foodListTitle}</h5><ul>${foodListHtml}</ul>`;
 }
 
 function updateHistoryUI() {
@@ -792,12 +826,13 @@ async function startCamera() {
 async function startDetection() {
     if (isDetecting) return;
     isDetecting = true;
-    let lastRequestTime = 0;
     const DETECTION_INTERVAL = 2000;
+    let lastFrameDetections = null;
 
     function drawLiveOverlay() {
-        if (lastDetections) {
+        if (lastDetections && JSON.stringify(lastDetections) !== JSON.stringify(lastFrameDetections)) {
             drawBoundingBoxes(lastDetections, elements.overlayCanvas, elements.videoStream, canvas);
+            lastFrameDetections = [...lastDetections];
         }
         if (isDetecting) requestAnimationFrame(drawLiveOverlay);
     }
@@ -809,8 +844,7 @@ async function startDetection() {
             return;
         }
         const currentTime = Date.now();
-        if (currentTime - lastRequestTime < DETECTION_INTERVAL) return;
-        lastRequestTime = currentTime;
+        if (currentTime - lastRecordTime < MIN_RECORD_INTERVAL) return;
 
         canvas.getContext("2d").drawImage(elements.videoStream, 0, 0, canvas.width, canvas.height);
         const imageDataUrl = canvas.toDataURL("image/jpeg");
@@ -826,10 +860,7 @@ async function startDetection() {
             lastDetections = data.detections || [];
             if (!lastDetections.length) {
                 elements.resultArea.innerHTML = `<div class="alert alert-warning">${translations[currentLang].noFood}</div>`;
-                return;
-            }
-            const currentDetectionsStr = lastDetections.map(d => d.food_name || d.label).sort().join(',');
-            if (!lastNutritionUpdate || currentDetectionsStr !== lastNutritionUpdate) {
+            } else {
                 const detectionsHtml = lastDetections.map(d => renderDetection(d)).join('');
                 elements.resultArea.innerHTML = `
                     <div class="nutrition-info">
@@ -840,14 +871,11 @@ async function startDetection() {
                 `;
                 elements.resultArea.dataset.detections = JSON.stringify({ detections: lastDetections });
                 renderChart(lastDetections);
-                lastNutritionUpdate = currentDetectionsStr;
-            }
-            if (currentTime - lastRecordTime >= MIN_RECORD_INTERVAL) {
+                lastRecordTime = currentTime;
                 const record = { timestamp: new Date().toLocaleString(), detections: lastDetections, image_url: imageDataUrl };
                 historyRecords.push(record);
                 localStorage.setItem('foodHistory', JSON.stringify(historyRecords));
                 updateHistoryUI();
-                lastRecordTime = currentTime;
             }
         } catch (err) {
             elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：${err.message}</div>`;
@@ -855,7 +883,7 @@ async function startDetection() {
         } finally {
             elements.loading.classList.add("d-none");
         }
-    }, 100);
+    }, DETECTION_INTERVAL);
 }
 
 elements.startStreamBtn.addEventListener("click", startCamera);
