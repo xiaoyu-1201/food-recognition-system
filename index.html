@@ -95,26 +95,48 @@
             background-color: rgba(54, 162, 235, 0.1); border-radius: 5px;
             display: flex; justify-content: center; align-items: center; text-align: center;
         }
+        /* 調整.info-item的對齊 */
         .nutrition-info .info-item {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
-            padding-bottom: 8px; padding-left: 15px; gap: 15px; border-bottom: 1px solid var(--border-color);
-            width: 100%; box-sizing: border-box;
+            display: flex;
+            justify-content: space-between; /* 保持左右分欄 */
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            padding-left: 0; /* 移除左邊距，讓對齊更精確 */
+            padding-right: 0; /* 移除右邊距 */
+            gap: 0; /* 移除間距，依靠flex比例控制 */
+            border-bottom: 1px solid var(--border-color);
+            width: 100%;
+            box-sizing: border-box;
         }
-        /* 新增.info-items-wrapper樣式 */
+        /* 調整.info-items-wrapper的寬度，與圓餅圖一致 */
         .info-items-wrapper {
             margin: 0 auto; /* 置中 */
-            width: fit-content; /* 根據內容調整寬度 */
+            width: 400px; /* 與圓餅圖的max-width一致 */
             max-width: 100%; /* 確保不超出父元素 */
         }
         .nutrition-info .info-item:last-child { border-bottom: none; }
         .nutrition-info .info-item .label {
-            flex: 1 1 35%; font-weight: 600; color: var(--text-color); text-align: left;
-            white-space: nowrap; overflow-wrap: break-word; padding-left: 5px;
+            flex: 0 0 50%; /* 佔據左邊50%，對齊圓餅圖左邊 */
+            font-weight: 600;
+            color: var(--text-color);
+            text-align: right; /* 讓.label靠右，對齊圓餅圖左邊界 */
+            white-space: normal;
+            overflow-wrap: break-word;
+            padding-right: 10px; /* 與圓餅圖左邊界保持一點間距 */
         }
         .nutrition-info .info-item .value {
-            flex: 1 1 55%; text-align: left; color: var(--text-color); font-weight: 500;
-            display: flex; align-items: center; justify-content: flex-start;
-            white-space: normal; overflow-wrap: break-word; min-width: 0; padding-right: 5px;
+            flex: 0 0 50%; /* 佔據右邊50%，對齊圓餅圖右邊 */
+            text-align: left; /* 讓.value靠左，對齊圓餅圖右邊界 */
+            color: var(--text-color);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            white-space: normal;
+            overflow-wrap: break-word;
+            min-width: 0;
+            padding-left: 10px; /* 與圓餅圖右邊界保持一點間距 */
         }
         .nutrition-info .info-item .value[for="calories"] {
             font-weight: 600; color: var(--highlight-color); background-color: rgba(255, 99, 132, 0.1);
