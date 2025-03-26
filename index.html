@@ -86,7 +86,7 @@
         /* 調整.nutrition-info的寬度，確保能容納.info-items-wrapper */
         .nutrition-info {
             width: 100%; /* 改為100%，讓其適應父元素 */
-            max-width: 400px; /* 與.info-items-wrapper和.chart-container一致 */
+            max-width: 450px; /* 與.info-items-wrapper和.chart-container一致 */
             padding: 15px;
             background-color: var(--hover-bg);
             border-radius: var(--border-radius);
@@ -108,7 +108,7 @@
         .info-items-wrapper {
             margin: 0 auto; /* 置中 */
             width: 400px; /* 與圓餅圖的max-width一致 */
-            max-width: 100%; /* 確保不超出父元素 */
+            max-width: 450%; /* 確保不超出父元素 */
         }
         /* 調整.info-item的對齊 */
         .nutrition-info .info-item {
@@ -158,8 +158,8 @@
         /* 確保圓餅圖置中 */
         .chart-container {
             width: 100%;
-            max-width: 400px; /* 與.info-items-wrapper寬度一致 */
-            height: 400px;
+            max-width: 450px; /* 與.info-items-wrapper寬度一致 */
+            height: 450px;
             margin: 20px auto;
             padding: 15px;
             background-color: var(--card-bg);
@@ -212,17 +212,16 @@
         @media (min-width: 992px) {
             #mainContent {
                 flex-direction: row;
-                justify-content: space-between;
+                justify-content: center;
                 gap: 20px;
             }
             #imageArea {
-                flex: 0 0 48%;
-                max-width: 48%;
+                flex: 0 0 40%;
+                max-width: 40%;
             }
             #resultArea {
-                flex: 0 0 48%;
-                max-width: 48%;
-                min-width: 400px; /* 確保#resultArea至少能容納400px */
+                flex: 0 0 56%;
+                max-width: 56%;
                 max-height: none;
                 overflow-y: visible;
                 overflow-x: visible;
