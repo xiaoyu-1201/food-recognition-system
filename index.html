@@ -221,14 +221,14 @@
             body { font-size: 12px; }
             h2 { font-size: 24px; }
             .nutrition-info {
-                width: 90%; /* 增加寬度以提高可讀性 */
+                width: 90%;
                 max-width: 90%;
                 padding: 10px;
-                margin: 0 auto; /* 居中 */
+                margin: 0 auto;
             }
             .nutrition-info .info-item { margin-bottom: 8px; }
             .nutrition-info .info-item .label, .nutrition-info .info-item .value {
-                font-size: 14px; /* 增加字體大小 */
+                font-size: 14px;
             }
             .chart-container { max-width: 300px; height: 300px; }
             #imageArea, #resultArea { max-width: 400px; }
@@ -242,26 +242,29 @@
                 bottom: 0;
                 left: 0;
                 width: 100%;
-                max-height: 35vh; /* 減少高度，避免遮擋底部的內容 */
+                max-height: 35vh;
                 overflow-y: auto;
                 background: rgba(245, 245, 247, 0.9);
                 padding: 10px;
                 z-index: 20;
+                transition: opacity 0.3s ease;
+            }
+            #resultArea.hidden {
+                opacity: 0;
+                pointer-events: none;
             }
             .dark-mode #resultArea {
                 background: rgba(29, 29, 31, 0.9);
             }
             #foodListArea {
                 position: relative;
-                z-index: 30; /* 確保在半透明視窗之上 */
-                margin-top: 40vh; /* 留出空間給半透明視窗 */
             }
             .action-buttons {
                 position: fixed;
-                bottom: 40vh; /* 調整按鈕位置，避免被半透明視窗遮擋 */
+                bottom: 40vh;
                 left: 50%;
                 transform: translateX(-50%);
-                z-index: 25; /* 確保按鈕在半透明視窗之上 */
+                z-index: 25;
                 width: 100%;
                 display: flex;
                 justify-content: center;
