@@ -83,6 +83,12 @@
             min-width: 100%; max-width: 100%; display: flex; flex-direction: column;
             justify-content: center; padding: 0; margin: 0 auto; text-align: center;
         }
+        /* 調整.info-items-wrapper的寬度，與圓餅圖一致 */
+        .info-items-wrapper {
+            margin: 0 auto; /* 置中 */
+            width: 400px; /* 與圓餅圖的max-width一致 */
+            max-width: 100%; /* 確保不超出父元素 */
+        }
         .nutrition-info {
             width: 50%; max-width: 50%; padding: 15px; background-color: var(--hover-bg);
             border-radius: var(--border-radius); border: 1px solid var(--border-color);
