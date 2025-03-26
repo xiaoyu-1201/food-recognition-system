@@ -87,6 +87,8 @@
             width: 100%; max-width: 100%; padding: 20px; background-color: var(--hover-bg);
             border-radius: var(--border-radius); border: 1px solid var(--border-color);
             box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin: 0 auto; box-sizing: border-box;
+            overflow-x: hidden; /* 避免水平溢出 */
+            word-break: break-word; /* 長文字自動換行 */
         }
         .nutrition-group {
             margin-top: 10px; margin-bottom: 8px; font-size: 16px; font-weight: 600;
@@ -98,11 +100,15 @@
         }
         .nutrition-info .info-item:last-child { border-bottom: none; }
         .nutrition-info .info-item .label {
-            flex: 0 0 40%; font-weight: 600; color: var(--text-color); text-align: left; display: inline-block;
+            flex: 0 0 35%; /* 調整標籤寬度比例 */
+            font-weight: 600; color: var(--text-color); text-align: left; display: inline-block;
+            word-break: break-word; /* 確保標籤文字換行 */
         }
         .nutrition-info .info-item .value {
-            flex: 0 0 60%; text-align: left; color: var(--text-color); font-weight: 500;
+            flex: 0 0 65%; /* 增加值區域的寬度 */
+            text-align: left; color: var(--text-color); font-weight: 500;
             display: flex; align-items: center; justify-content: flex-start;
+            word-break: break-word; /* 確保值文字換行 */
         }
         .nutrition-info .info-item .value[for="calories"] {
             font-weight: 600; color: var(--highlight-color); background-color: rgba(255, 99, 132, 0.1);
@@ -166,14 +172,15 @@
                 gap: 20px;
             }
             #imageArea {
-                flex: 0 0 50%;
-                max-width: 50%;
-            }
-            #resultArea {
                 flex: 0 0 45%;
                 max-width: 45%;
+            }
+            #resultArea {
+                flex: 0 0 50%;
+                max-width: 50%;
                 max-height: 600px;
                 overflow-y: auto;
+                overflow-x: hidden;
             }
         }
         @media (max-width: 992px) {
