@@ -87,25 +87,25 @@
             width: 100%; max-width: 100%; padding: 15px; background-color: var(--hover-bg);
             border-radius: var(--border-radius); border: 1px solid var(--border-color);
             box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin: 0; box-sizing: border-box;
-            overflow-x: visible;
+            min-width: 0; overflow: visible;
         }
         .nutrition-group {
             margin-top: 10px; margin-bottom: 8px; font-size: 16px; font-weight: 600;
-            color: var(--text-color); border-left: 3px solid #36A2EB; padding-left: 8px;
+            color: var(--text-color); border-left: 3px solid #36A2EB; padding-left: 12px;
         }
         .nutrition-info .info-item {
             display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
-            padding-bottom: 8px; gap: 15px; border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px; padding-left: 15px; gap: 15px; border-bottom: 1px solid var(--border-color);
         }
         .nutrition-info .info-item:last-child { border-bottom: none; }
         .nutrition-info .info-item .label {
             flex: 1 1 30%; font-weight: 600; color: var(--text-color); text-align: left;
-            white-space: normal; overflow-wrap: break-word;
+            white-space: normal; overflow-wrap: break-word; padding-left: 5px;
         }
         .nutrition-info .info-item .value {
             flex: 1 1 60%; text-align: left; color: var(--text-color); font-weight: 500;
             display: flex; align-items: center; justify-content: flex-start;
-            white-space: normal; overflow-wrap: break-word; min-width: 0;
+            white-space: normal; overflow-wrap: break-word; min-width: 0; padding-right: 5px;
         }
         .nutrition-info .info-item .value[for="calories"] {
             font-weight: 600; color: var(--highlight-color); background-color: rgba(255, 99, 132, 0.1);
@@ -116,8 +116,9 @@
         .highlight { animation: highlight 0.5s ease-in-out; }
         @keyframes highlight { 0% { opacity: 0.5; } 100% { opacity: 1; } }
         .chart-container {
-            width: 100%; max-width: 400px; height: 400px; margin: 20px auto; padding: 15px;
-            background-color: var(--card-bg); border-radius: var(--border-radius); box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            width: 100%; max-width: 400px; height: 400px; margin: 20px auto; margin-left: 15px;
+            padding: 15px; background-color: var(--card-bg); border-radius: var(--border-radius);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
         }
         #nutritionChart { width: 100% !important; height: 100% !important; }
         .history-item {
@@ -169,15 +170,15 @@
                 gap: 30px;
             }
             #imageArea {
-                flex: 0 0 40%;
-                max-width: 40%;
+                flex: 0 0 35%;
+                max-width: 35%;
             }
             #resultArea {
-                flex: 0 0 55%;
-                max-width: 55%;
-                max-height: 600px;
-                overflow-y: auto;
-                overflow-x: auto;
+                flex: 0 0 60%;
+                max-width: 60%;
+                max-height: none;
+                overflow-y: visible;
+                overflow-x: visible;
             }
         }
         @media (max-width: 992px) {
@@ -222,6 +223,22 @@
             .dark-mode #resultArea {
                 background: rgba(29, 29, 31, 0.9);
             }
+        }
+        /* 為details與summary添加樣式 */
+        details {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        summary {
+            font-weight: 600;
+            cursor: pointer;
+            padding: 5px;
+        }
+        details[open] {
+            padding-bottom: 0;
         }
     </style>
 </head>
@@ -387,7 +404,7 @@ function updateUI() {
     renderFoodList();
     if (elements.resultArea.dataset.detections) {
         const data = JSON.parse(elements.resultArea.dataset.detections);
-        const detectionsHtml = data.detections.map(d => renderDetection(d, portionValues[d.food_name] || 1)).join('');
+        const detectionsHtml = data.detections.map((d, index) => renderDetection(d, portionValues[d.food_name] || 1, index)).join('');
         elements.resultArea.innerHTML = `
             <div class="nutrition-info">
                 ${renderNutritionSelector(data.detections)}
@@ -480,7 +497,7 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
     });
 }
 
-function renderDetection(detection, multiplier = 1) {
+function renderDetection(detection, multiplier = 1, index) {
     const t = translations[currentLang];
     const foodName = currentLang === "en" 
         ? (detection.label || detection.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) 
@@ -496,7 +513,7 @@ function renderDetection(detection, multiplier = 1) {
         confidence: (detection.confidence * 100).toFixed(2)
     };
     const priceUnit = currentLang === "en" ? "NTD" : "元";
-    return `
+    const content = `
         <div class="nutrition-group">${t.basicInfo}</div>
         <div class="info-item">
             <span class="label">${t.food_name}</span>
@@ -553,6 +570,16 @@ function renderDetection(detection, multiplier = 1) {
             <span class="value">${values.confidence}<span class="unit-text">%</span></span>
         </div>
     `;
+    if (index === 0) {
+        return content;
+    } else {
+        return `
+            <details>
+                <summary>${foodName}</summary>
+                ${content}
+            </details>
+        `;
+    }
 }
 
 function adjustPortion(button, foodName, change) {
@@ -620,8 +647,8 @@ function updatePortion(input, foodName) {
     input.value = multiplier;
     portionValues[foodName] = multiplier;
     const currentData = JSON.parse(elements.resultArea.dataset.detections);
-    const updatedHtml = currentData.detections.map(d => 
-        d.food_name === foodName ? renderDetection(d, multiplier) : renderDetection(d, portionValues[d.food_name] || 1)
+    const updatedHtml = currentData.detections.map((d, index) => 
+        renderDetection(d, portionValues[d.food_name] || 1, index)
     ).join('');
     elements.resultArea.innerHTML = `
         <div class="nutrition-info">
@@ -655,7 +682,7 @@ async function predictImage() {
         elements.previewImg.src = data.image_url;
         elements.previewImg.style.display = "block";
         elements.videoStream.style.display = "none";
-        const detectionsHtml = data.detections.map(d => renderDetection(d)).join('');
+        const detectionsHtml = data.detections.map((d, index) => renderDetection(d, portionValues[d.food_name] || 1, index)).join('');
         elements.resultArea.innerHTML = `
             <div class="nutrition-info">
                 ${renderNutritionSelector(data.detections)}
@@ -704,7 +731,7 @@ function updateHistoryUI() {
 
 function showHistoryDetail(index) {
     const record = historyRecords[index];
-    const detectionsHtml = record.detections.map(d => renderDetection(d, portionValues[d.food_name] || 1)).join('');
+    const detectionsHtml = record.detections.map((d, idx) => renderDetection(d, portionValues[d.food_name] || 1, idx)).join('');
     elements.resultArea.innerHTML = `
         <div class="nutrition-info">
             ${renderNutritionSelector(record.detections)}
@@ -865,7 +892,7 @@ async function startDetection() {
             if (!lastDetections.length) {
                 elements.resultArea.innerHTML = `<div class="alert alert-warning">${translations[currentLang].noFood}</div>`;
             } else {
-                const detectionsHtml = lastDetections.map(d => renderDetection(d)).join('');
+                const detectionsHtml = lastDetections.map((d, index) => renderDetection(d, portionValues[d.food_name] || 1, index)).join('');
                 elements.resultArea.innerHTML = `
                     <div class="nutrition-info">
                         ${renderNutritionSelector(lastDetections)}
