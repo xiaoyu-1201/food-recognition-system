@@ -220,19 +220,18 @@
         @media (max-width: 576px) {
             body { font-size: 12px; }
             h2 { font-size: 24px; }
-            .nutrition-info { padding: 15px; }
+            .nutrition-info {
+                width: 90%; /* 增加寬度以提高可讀性 */
+                max-width: 90%;
+                padding: 10px;
+                margin: 0 auto; /* 居中 */
+            }
             .nutrition-info .info-item { margin-bottom: 8px; }
-            .nutrition-info .info-item .label, .nutrition-info .info-item .value { font-size: 14px; }
+            .nutrition-info .info-item .label, .nutrition-info .info-item .value {
+                font-size: 14px; /* 增加字體大小 */
+            }
             .chart-container { max-width: 300px; height: 300px; }
             #imageArea, #resultArea { max-width: 400px; }
-            #imageArea { min-height: 200px; padding: 0; }
-            .portion-input-wrapper { width: auto; max-width: 80px; }
-            .portion-input { width: 40px; }
-            .portion-input-btn { width: 24px; height: 24px; }
-            .portion-input-btn i { font-size: 12px; }
-            #mainContent {
-                position: relative;
-            }
             #imageArea {
                 position: relative;
                 width: 100%;
@@ -243,7 +242,7 @@
                 bottom: 0;
                 left: 0;
                 width: 100%;
-                max-height: 40vh;
+                max-height: 35vh; /* 減少高度，避免遮擋底部的內容 */
                 overflow-y: auto;
                 background: rgba(245, 245, 247, 0.9);
                 padding: 10px;
@@ -251,6 +250,22 @@
             }
             .dark-mode #resultArea {
                 background: rgba(29, 29, 31, 0.9);
+            }
+            #foodListArea {
+                position: relative;
+                z-index: 30; /* 確保在半透明視窗之上 */
+                margin-top: 40vh; /* 留出空間給半透明視窗 */
+            }
+            .action-buttons {
+                position: fixed;
+                bottom: 40vh; /* 調整按鈕位置，避免被半透明視窗遮擋 */
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 25; /* 確保按鈕在半透明視窗之上 */
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                gap: 10px;
             }
         }
         details {
@@ -947,6 +962,10 @@ async function startDetection() {
                 historyRecords.push(record);
                 localStorage.setItem('foodHistory', JSON.stringify(historyRecords));
                 updateHistoryUI();
+                // 辨識成功後停止自動辨識，並顯示「重新辨識」按鈕
+                isDetecting = false;
+                clearInterval(detectionInterval);
+                elements.restartStreamBtn.classList.remove("d-none");
             }
         } catch (err) {
             elements.resultArea.innerHTML = `<div class="alert alert-danger">${translations[currentLang].error}：${err.message}</div>`;
