@@ -82,6 +82,7 @@
         #resultArea {
             min-width: 100%; max-width: 100%; display: flex; flex-direction: column;
             justify-content: center; padding: 0; margin: 0 auto; text-align: center;
+            position: relative;
         }
         .nutrition-info {
             width: 50%; max-width: 50%; padding: 15px; background-color: var(--hover-bg);
@@ -192,6 +193,35 @@
         .dark-mode .portion-input-btn:hover { background-color: #5a5a5c; }
         .portion-input-btn i { font-size: 14px; color: #666; }
         .dark-mode .portion-input-btn i { color: #d1d1d6; }
+        /* 改進可辨識食物項目的卡片式呈現 */
+        #foodListArea h5 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .food-list-grid {
+            display: grid;
+            gap: 15px;
+            padding: 0;
+            list-style: none;
+        }
+        .food-list-grid li {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        .food-list-grid li:hover {
+            transform: translateY(-2px);
+            background-color: var(--hover-bg);
+        }
+        .dark-mode .food-list-grid li {
+            background-color: var(--card-bg);
+        }
+        .dark-mode .food-list-grid li:hover {
+            background-color: var(--hover-bg);
+        }
         @media (min-width: 992px) {
             #mainContent {
                 flex-direction: row;
@@ -209,6 +239,9 @@
                 overflow-y: visible;
                 overflow-x: visible;
             }
+            .food-list-grid {
+                grid-template-columns: repeat(3, 1fr); /* 網頁版每行3張卡片 */
+            }
         }
         @media (max-width: 992px) {
             #imageArea, #resultArea { max-width: 500px; width: 100%; align-self: center; }
@@ -216,6 +249,9 @@
             .chart-container { max-width: 350px; height: 350px; }
             body { font-size: 14px; }
             .card { padding: 10px; margin: 10px; }
+            .food-list-grid {
+                grid-template-columns: 1fr; /* 手機版單列 */
+            }
         }
         @media (max-width: 576px) {
             body { font-size: 12px; }
@@ -238,37 +274,52 @@
                 min-height: 60vh;
             }
             #resultArea {
-                position: fixed;
-                bottom: 0;
-                left: 0;
                 width: 100%;
-                max-height: 35vh;
+                max-height: 35vh; /* 預設收起高度 */
                 overflow-y: auto;
-                background: rgba(245, 245, 247, 0.9);
+                background: var(--hover-bg);
                 padding: 10px;
-                z-index: 20;
-                transition: opacity 0.3s ease;
+                border-top: 1px solid var(--border-color);
+                transition: max-height 0.3s ease; /* 展開/收起動畫 */
             }
-            #resultArea.hidden {
-                opacity: 0;
-                pointer-events: none;
+            #resultArea.expanded {
+                max-height: 80vh; /* 展開高度 */
             }
             .dark-mode #resultArea {
-                background: rgba(29, 29, 31, 0.9);
+                background: var(--hover-bg);
             }
             #foodListArea {
                 position: relative;
             }
             .action-buttons {
-                position: fixed;
-                bottom: 40vh;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 25;
-                width: 100%;
-                display: flex;
-                justify-content: center;
-                gap: 10px;
+                position: static; /* 移除固定定位 */
+                transform: none;
+                width: auto;
+                margin: 10px 0;
+            }
+            /* 展開/收起按鈕 */
+            .toggle-result-btn {
+                display: none; /* 網頁版隱藏 */
+            }
+            @media (max-width: 576px) {
+                .toggle-result-btn {
+                    display: block;
+                    position: sticky;
+                    top: 0;
+                    z-index: 21;
+                    width: 100%;
+                    padding: 8px;
+                    background: var(--card-bg);
+                    border: none;
+                    font-size: 14px;
+                    color: var(--text-color);
+                    text-align: center;
+                    cursor: pointer;
+                    border-bottom: 1px solid var(--border-color);
+                }
+                .dark-mode .toggle-result-btn {
+                    background: var(--card-bg);
+                }
             }
         }
         details {
@@ -327,7 +378,9 @@
                 <img id="previewImg" src="" data-placeholder="請上傳圖片以預覽" style="width: 100%; height: auto; border-radius: 10px;">
                 <canvas id="previewOverlayCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;"></canvas>
             </div>
-            <div id="resultArea"></div>
+            <div id="resultArea">
+                <button class="toggle-result-btn" onclick="toggleResultArea()">展開/收起</button>
+            </div>
         </div>
         <div class="action-buttons">
             <button id="startStreamBtn" class="btn btn-primary">開啟相機</button>
@@ -458,6 +511,7 @@ function updateUI() {
         const data = JSON.parse(elements.resultArea.dataset.detections);
         const detectionsHtml = data.detections.map((d, index) => renderDetection(d, portionValues[d.food_name] || 1, index)).join('');
         elements.resultArea.innerHTML = `
+            <button class="toggle-result-btn" onclick="toggleResultArea()">展開/收起</button>
             <div class="nutrition-info">
                 ${renderNutritionSelector(data.detections)}
                 ${detectionsHtml}
@@ -472,23 +526,13 @@ function updateUI() {
 updateUI();
 elements.predictBtn.focus();
 
-// 添加滾動監聽
-window.addEventListener("scroll", () => {
-    const foodListArea = document.getElementById("foodListArea");
+// 展開/收起結果視窗
+function toggleResultArea() {
     const resultArea = document.getElementById("resultArea");
-    
-    if (foodListArea && resultArea) {
-        const foodListRect = foodListArea.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-
-        // 如果foodListArea進入視窗（即頂部進入可見區域），隱藏resultArea
-        if (foodListRect.top <= windowHeight && foodListRect.bottom >= 0) {
-            resultArea.classList.add("hidden");
-        } else {
-            resultArea.classList.remove("hidden");
-        }
-    }
-});
+    resultArea.classList.toggle("expanded");
+    const toggleBtn = resultArea.querySelector(".toggle-result-btn");
+    toggleBtn.textContent = resultArea.classList.contains("expanded") ? "收起" : "展開";
+}
 
 function setupDropdown(toggleId, dropdownId, optionsSelector, callback) {
     const toggle = document.getElementById(toggleId);
@@ -727,6 +771,7 @@ function updatePortion(input, foodName) {
         renderDetection(d, portionValues[d.food_name] || 1, index)
     ).join('');
     elements.resultArea.innerHTML = `
+        <button class="toggle-result-btn" onclick="toggleResultArea()">展開/收起</button>
         <div class="nutrition-info">
             ${renderNutritionSelector(currentData.detections)}
             ${updatedHtml}
@@ -760,6 +805,7 @@ async function predictImage() {
         elements.videoStream.style.display = "none";
         const detectionsHtml = data.detections.map((d, index) => renderDetection(d, portionValues[d.food_name] || 1, index)).join('');
         elements.resultArea.innerHTML = `
+            <button class="toggle-result-btn" onclick="toggleResultArea()">展開/收起</button>
             <div class="nutrition-info">
                 ${renderNutritionSelector(data.detections)}
                 ${detectionsHtml}
@@ -790,7 +836,10 @@ function renderFoodList() {
     const foodListHtml = foodList.map(food => `
         <li>${currentLang === "en" ? food.label.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : food.food_name}</li>
     `).join('');
-    document.getElementById("foodListArea").innerHTML = `<h5>${translations[currentLang].foodListTitle}</h5><ul>${foodListHtml}</ul>`;
+    document.getElementById("foodListArea").innerHTML = `
+        <h5>${translations[currentLang].foodListTitle}</h5>
+        <ul class="food-list-grid">${foodListHtml}</ul>
+    `;
 }
 
 function updateHistoryUI() {
@@ -809,6 +858,7 @@ function showHistoryDetail(index) {
     const record = historyRecords[index];
     const detectionsHtml = record.detections.map((d, idx) => renderDetection(d, portionValues[d.food_name] || 1, idx)).join('');
     elements.resultArea.innerHTML = `
+        <button class="toggle-result-btn" onclick="toggleResultArea()">展開/收起</button>
         <div class="nutrition-info">
             ${renderNutritionSelector(record.detections)}
             ${detectionsHtml}
@@ -970,6 +1020,7 @@ async function startDetection() {
             } else {
                 const detectionsHtml = lastDetections.map((d, index) => renderDetection(d, portionValues[d.food_name] || 1, index)).join('');
                 elements.resultArea.innerHTML = `
+                    <button class="toggle-result-btn" onclick="toggleResultArea()">展開/收起</button>
                     <div class="nutrition-info">
                         ${renderNutritionSelector(lastDetections)}
                         ${detectionsHtml}
@@ -1047,5 +1098,6 @@ document.addEventListener("keydown", (e) => {
     }
 });
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9268eb4a6f57bfbd',t:'MTc0MzAxNTkyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9268eb4a6f57bfbd',t:'MTc0MzAxNTkyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
 </html>
