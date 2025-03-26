@@ -235,13 +235,19 @@
             box-sizing: border-box;
         }
         .nutrition-group {
-            margin-top: 10px;
-            margin-bottom: 8px;
+            margin: 10px auto; /* 與之前一致，置中 */
+            width: fit-content; /* 與之前一致，寬度適應內容 */
             font-size: 16px;
             font-weight: 600;
             color: var(--text-color);
-            border-left: 3px solid #36A2EB;
-            padding-left: 8px;
+            border-left: 3px solid #36A2EB; /* 左邊框保持一致 */
+            padding: 5px 15px; /* 與之前一致，調整內邊距 */
+            background-color: rgba(54, 162, 235, 0.1); /* 添加底色，與之前一致 */
+            border-radius: 5px; /* 與之前一致，添加圓角 */
+            display: flex; /* 與之前一致，確保內容居中 */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
         }
         .nutrition-info .info-item {
             display: flex;
