@@ -95,7 +95,7 @@
             margin: 0 auto; /* 置中 */
             box-sizing: border-box;
             min-width: 0;
-            overflow-x: auto;
+            overflow-x: visible;
             overflow-y: visible;
         }
         .nutrition-group {
@@ -107,7 +107,7 @@
         /* 調整.info-items-wrapper的寬度，與圓餅圖一致 */
         .info-items-wrapper {
             margin: 0 auto; /* 置中 */
-            width: 400px; /* 與圓餅圖的max-width一致 */
+            width: 100%; /* 與圓餅圖的max-width一致 */
             max-width: 450%; /* 確保不超出父元素 */
         }
         /* 調整.info-item的對齊 */
@@ -160,6 +160,7 @@
             width: 100%;
             max-width: 450px; /* 與.info-items-wrapper寬度一致 */
             height: 450px;
+            aspect-ratio: 1 / 1; /* 保持圓形比例 */
             margin: 20px auto;
             padding: 15px;
             background-color: var(--card-bg);
@@ -212,7 +213,7 @@
         @media (min-width: 992px) {
             #mainContent {
                 flex-direction: row;
-                justify-content: center;
+                justify-content: space-between;
                 gap: 20px;
             }
             #imageArea {
