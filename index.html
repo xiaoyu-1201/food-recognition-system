@@ -169,12 +169,13 @@
         @media (min-width: 992px) {
             #mainContent {
                 flex-direction: row;
-                justify-content: center;
+                justify-content: space-between;
                 gap: 20px;
             }
             #imageArea {
-                flex: 0 0 50%;
-                max-width: 50%;
+                flex: 0 0 55%;
+                max-width: 55%;
+                z-index: 1;
             }
             #resultArea {
                 flex: 0 0 40%;
@@ -184,6 +185,7 @@
                 overflow-x: visible;
                 display: flex;
                 justify-content: center;
+                z-index: 2;
             }
         }
         @media (max-width: 992px) {
