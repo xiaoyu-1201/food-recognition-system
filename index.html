@@ -193,6 +193,7 @@
         .dark-mode .portion-input-btn:hover { background-color: #5a5a5c; }
         .portion-input-btn i { font-size: 14px; color: #666; }
         .dark-mode .portion-input-btn i { color: #d1d1d6; }
+        /* 改進可辨識食物項目的卡片式呈現 */
         #foodListArea h5 {
             margin-bottom: 15px;
             text-align: center;
@@ -239,16 +240,16 @@
                 overflow-x: visible;
             }
             .food-list-grid {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(3, 1fr); /* 網頁版每行3張卡片 */
             }
         }
         @media (min-width: 577px) {
             #resultArea {
-                max-height: none !important;
+                max-height: none !important; /* 網頁版移除高度限制 */
                 overflow-y: visible !important;
             }
             .toggle-result-btn {
-                display: none !important;
+                display: none !important; /* 確保網頁版不顯示按鈕 */
             }
         }
         @media (max-width: 992px) {
@@ -258,7 +259,7 @@
             body { font-size: 14px; }
             .card { padding: 10px; margin: 10px; }
             .food-list-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr; /* 手機版單列 */
             }
         }
         @media (max-width: 576px) {
@@ -283,15 +284,15 @@
             }
             #resultArea {
                 width: 100%;
-                max-height: 35vh;
+                max-height: 35vh; /* 預設收起高度 */
                 overflow-y: auto;
                 background: var(--hover-bg);
                 padding: 10px;
                 border-top: 1px solid var(--border-color);
-                transition: max-height 0.3s ease;
+                transition: max-height 0.3s ease; /* 展開/收起動畫 */
             }
             #resultArea.expanded {
-                max-height: 80vh;
+                max-height: 80vh; /* 展開高度 */
             }
             .dark-mode #resultArea {
                 background: var(--hover-bg);
@@ -300,11 +301,12 @@
                 position: relative;
             }
             .action-buttons {
-                position: static;
+                position: static; /* 移除固定定位 */
                 transform: none;
                 width: auto;
                 margin: 10px 0;
             }
+            /* 展開/收起按鈕 */
             .toggle-result-btn {
                 display: block;
                 position: sticky;
@@ -344,17 +346,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-        }
-        /* 新增分享圖片樣式 */
-        #shareCanvas {
-            display: none;
-        }
-        .share-btn {
-            background-color: #28a745;
-            color: white;
-        }
-        .share-btn:hover {
-            background-color: #218838;
         }
     </style>
 </head>
@@ -401,7 +392,6 @@
             <button id="toggleCameraBtn" class="btn btn-secondary d-none">切換至前鏡頭</button>
             <button id="predictBtn" class="btn btn-success">🔍 辨識食物</button>
             <button id="restartStreamBtn" class="btn btn-info d-none">🔄 重新辨識</button>
-            <button id="shareBtn" class="btn btn-success share-btn d-none">📤 生成分享圖片</button>
         </div>
         <div id="loading" class="spinner-border text-success mt-3 d-none" role="status"><span class="visually-hidden">Loading...</span></div>
         <div class="d-flex justify-content-between align-items-center">
@@ -414,7 +404,6 @@
         <div id="historyArea" class="mt-2"></div>
     </div>
     <div class="card mt-4" id="foodListArea"></div>
-    <canvas id="shareCanvas"></canvas>
 </div>
 
 <script>
@@ -431,7 +420,7 @@ const translations = {
         "darkTheme": "黑色", "previewPlaceholder": "請上傳圖片以預覽", "basicInfo": "基本資訊",
         "nutritionInfo": "營養成分", "otherInfo": "其他資訊", "toggleCameraFront": "切換至前鏡頭",
         "toggleCameraBack": "切換至後鏡頭", "requestAborted": "請求已中止，請重新嘗試",
-        "foodListTitle": "可辨識食物項目", "shareBtn": "📤 生成分享圖片", "shareTitle": "我的食物辨識結果"
+        "foodListTitle": "可辨識食物項目"
     },
     "en": {
         "title": "YOLOv8 Food Recognition System", "uploadLabel": "Select Food Image:", "predictBtn": "🔍 Recognize Food",
@@ -445,7 +434,7 @@ const translations = {
         "darkTheme": "Dark", "previewPlaceholder": "Please upload an image to preview", "basicInfo": "Basic Info",
         "nutritionInfo": "Nutrition Info", "otherInfo": "Other Info", "toggleCameraFront": "Switch to Front Camera",
         "toggleCameraBack": "Switch to Back Camera", "requestAborted": "Request aborted, please try again",
-        "foodListTitle": "Recognizable Food Items", "shareBtn": "📤 Generate Share Image", "shareTitle": "My Food Recognition Result"
+        "foodListTitle": "Recognizable Food Items"
     }
 };
 
@@ -461,6 +450,7 @@ let detectionInterval = null;
 let stream = null;
 let lastDetections = null;
 let lastRecordTime = 0;
+let lastNutritionUpdate = null;
 const MIN_RECORD_INTERVAL = 5000;
 
 const foodList = [
@@ -476,16 +466,14 @@ const foodList = [
 const elements = {
     title: document.getElementById("title"), uploadLabel: document.getElementById("uploadLabel"),
     predictBtn: document.getElementById("predictBtn"), startStreamBtn: document.getElementById("startStreamBtn"),
-    stopStreamBtn: document.getElementById("stopStreamBtn"), restartStreamBtn: document.getElementById("restartStreamBtn"), 
-    toggleCameraBtn: document.getElementById("toggleCameraBtn"), shareBtn: document.getElementById("shareBtn"),
+    stopStreamBtn: document.getElementById("stopStreamBtn"), restartStreamBtn: document.getElementById("restartStreamBtn"), toggleCameraBtn: document.getElementById("toggleCameraBtn"),
     historyTitleText: document.getElementById("historyTitleText"), historySearch: document.getElementById("historySearch"),
     themeToggle: document.getElementById("themeToggle"), languageToggle: document.getElementById("languageToggle"),
     toggleDeleteMode: document.getElementById("toggleDeleteMode"), confirmDelete: document.getElementById("confirmDelete"),
     selectAll: document.getElementById("selectAll"), previewImg: document.getElementById("previewImg"),
     resultArea: document.getElementById("resultArea"), videoStream: document.getElementById("videoStream"),
     historyArea: document.getElementById("historyArea"), loading: document.getElementById("loading"),
-    overlayCanvas: document.getElementById("overlayCanvas"), previewOverlayCanvas: document.getElementById("previewOverlayCanvas"),
-    shareCanvas: document.getElementById("shareCanvas")
+    overlayCanvas: document.getElementById("overlayCanvas"), previewOverlayCanvas: document.getElementById("previewOverlayCanvas")
 };
 
 function updateText() {
@@ -496,7 +484,6 @@ function updateText() {
     elements.startStreamBtn.textContent = t.startStreamBtn;
     elements.stopStreamBtn.textContent = t.stopStreamBtn;
     elements.restartStreamBtn.textContent = t.restartStreamBtn;
-    elements.shareBtn.textContent = t.shareBtn;
     elements.historyTitleText.textContent = t.historyTitle;
     elements.historySearch.placeholder = t.searchPlaceholder;
     elements.themeToggle.textContent = currentTheme === "light" ? t.lightTheme : t.darkTheme;
@@ -537,9 +524,6 @@ function updateUI() {
             </div>
         `;
         renderChart(data.detections);
-        elements.shareBtn.classList.remove("d-none");
-    } else {
-        elements.shareBtn.classList.add("d-none");
     }
     updateHistoryUI();
 }
@@ -547,10 +531,12 @@ function updateUI() {
 updateUI();
 elements.predictBtn.focus();
 
+// 檢查是否為手機版的函數
 function isMobileView() {
     return window.innerWidth <= 576;
 }
 
+// 展開/收起結果視窗
 function toggleResultArea() {
     const resultArea = document.getElementById("resultArea");
     resultArea.classList.toggle("expanded");
@@ -604,21 +590,16 @@ function previewFile() {
     reader.readAsDataURL(file);
 }
 
-function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = null, offsetX = 0, offsetY = 0, targetWidth = null, targetHeight = null) {
+function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = null) {
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (targetWidth && targetHeight) {
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-    } else {
-        canvas.width = targetElement.offsetWidth;
-        canvas.height = targetElement.offsetHeight;
-    }
+    canvas.width = targetElement.offsetWidth;
+    canvas.height = targetElement.offsetHeight;
 
-    const naturalWidth = sourceCanvas ? sourceCanvas.width : targetElement.videoWidth || targetElement.naturalWidth;
-    const naturalHeight = sourceCanvas ? sourceCanvas.height : targetElement.videoHeight || targetElement.naturalHeight;
-    const scaleX = canvas.width / naturalWidth;
-    const scaleY = canvas.height / naturalHeight;
+    const targetWidth = sourceCanvas ? sourceCanvas.width : targetElement.videoWidth || targetElement.width;
+    const targetHeight = sourceCanvas ? sourceCanvas.height : targetElement.videoHeight || targetElement.height;
+    const scaleX = canvas.width / targetWidth;
+    const scaleY = canvas.height / targetHeight;
 
     if (!detections || !Array.isArray(detections)) return;
 
@@ -629,14 +610,14 @@ function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = nul
         const height = (y2 - y) * scaleY;
         ctx.strokeStyle = "#00FF00";
         ctx.lineWidth = 2;
-        ctx.strokeRect(offsetX + x * scaleX, offsetY + y * scaleY, width, height);
+        ctx.strokeRect(x * scaleX, y * scaleY, width, height);
         const foodName = currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : (d.food_name || d.label);
         const confidence = (d.confidence * 100).toFixed(2);
         ctx.font = "16px Arial";
         ctx.fillStyle = "#00FF00";
-        ctx.fillRect(offsetX + x * scaleX, offsetY + y * scaleY - 25, ctx.measureText(`${foodName} (${confidence}%)`).width + 10, 20);
+        ctx.fillRect(x * scaleX, y * scaleY - 25, ctx.measureText(`${foodName} (${confidence}%)`).width + 10, 20);
         ctx.fillStyle = "#ffffff";
-        ctx.fillText(`${foodName} (${confidence}%)`, offsetX + x * scaleX + 5, offsetY + y * scaleY - 10);
+        ctx.fillText(`${foodName} (${confidence}%)`, x * scaleX + 5, y * scaleY - 10);
     });
 }
 
@@ -997,7 +978,6 @@ async function startCamera() {
         elements.toggleCameraBtn.classList.remove("d-none");
         elements.predictBtn.classList.add("d-none");
         elements.restartStreamBtn.classList.add("d-none");
-        elements.shareBtn.classList.add("d-none");
         elements.previewImg.style.display = "none";
         elements.videoStream.style.display = "block";
         elements.videoStream.addEventListener("loadedmetadata", () => {
@@ -1068,6 +1048,7 @@ async function startDetection() {
                 historyRecords.push(record);
                 localStorage.setItem('foodHistory', JSON.stringify(historyRecords));
                 updateHistoryUI();
+                // 辨識成功後停止自動辨識，並顯示「重新辨識」按鈕
                 isDetecting = false;
                 clearInterval(detectionInterval);
                 elements.restartStreamBtn.classList.remove("d-none");
@@ -1116,7 +1097,6 @@ elements.stopStreamBtn.addEventListener("click", () => {
         elements.toggleCameraBtn.classList.add("d-none");
         elements.predictBtn.classList.remove("d-none");
         elements.restartStreamBtn.classList.add("d-none");
-        elements.shareBtn.classList.add("d-none");
         elements.previewImg.style.display = "block";
         elements.videoStream.style.display = "none";
         elements.resultArea.innerHTML = "";
@@ -1131,90 +1111,7 @@ document.addEventListener("keydown", (e) => {
         elements.predictBtn.click();
     }
 });
-
-// 新增生成分享圖片功能
-async function generateShareImage() {
-    if (!elements.resultArea.dataset.detections) {
-        alert(currentLang === "en" ? "No detection results to share!" : "沒有辨識結果可分享！");
-        return;
-    }
-
-    const data = JSON.parse(elements.resultArea.dataset.detections);
-    const ctx = elements.shareCanvas.getContext("2d");
-    const img = elements.previewImg;
-    const chartCanvas = document.getElementById("nutritionChart");
-
-    // 設定畫布尺寸
-    const padding = 40;
-    const imgWidth = 600;
-    const imgHeight = img.naturalHeight * (imgWidth / img.naturalWidth);
-    const textAreaWidth = 400;
-    const totalWidth = imgWidth + textAreaWidth + padding * 3;
-    const totalHeight = Math.max(imgHeight, 600) + padding * 2 + 100;
-
-    elements.shareCanvas.width = totalWidth;
-    elements.shareCanvas.height = totalHeight;
-
-    // 繪製背景
-    ctx.fillStyle = currentTheme === "dark" ? "#2c2c2e" : "#ffffff";
-    ctx.fillRect(0, 0, totalWidth, totalHeight);
-
-    // 繪製標題
-    ctx.fillStyle = currentTheme === "dark" ? "#f5f5f7" : "#1d1d1f";
-    ctx.font = "bold 32px -apple-system, BlinkMacSystemFont, 'SF Pro', Arial, sans-serif";
-    const titleText = translations[currentLang].shareTitle;
-    const titleWidth = ctx.measureText(titleText).width;
-    ctx.fillText(titleText, (totalWidth - titleWidth) / 2, padding + 20);
-
-    // 繪製圖片
-    ctx.drawImage(img, padding, padding + 100, imgWidth, imgHeight);
-    drawBoundingBoxes(data.detections, elements.shareCanvas, img, null, padding, padding + 100, imgWidth, imgHeight);
-
-    // 繪製營養資訊
-    ctx.font = "16px -apple-system, BlinkMacSystemFont, 'SF Pro', Arial, sans-serif";
-    let yOffset = padding + 100;
-    const lineHeight = 30;
-    data.detections.forEach((d, index) => {
-        const multiplier = portionValues[d.food_name] || 1;
-        const foodName = currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : (d.food_name || d.label);
-        ctx.fillStyle = currentTheme === "dark" ? "#36A2EB" : "#1d1d1f";
-        ctx.font = "bold 18px -apple-system, BlinkMacSystemFont, 'SF Pro', Arial, sans-serif";
-        ctx.fillText(`${index + 1}. ${foodName}`, imgWidth + padding * 2, yOffset);
-        yOffset += lineHeight;
-
-        ctx.font = "16px -apple-system, BlinkMacSystemFont, 'SF Pro', Arial, sans-serif";
-        ctx.fillStyle = currentTheme === "dark" ? "#f5f5f7" : "#515154";
-        const t = translations[currentLang];
-        const nutritionText = [
-            `${t.serving_size}: ${(d.serving_size * multiplier).toFixed(1)} g`,
-            `${t.calories}: ${(d.calories * multiplier).toFixed(2)} kcal`,
-            `${t.protein}: ${(d.protein * multiplier).toFixed(1)} g`,
-            `${t.carbohydrate}: ${(d.total_carbohydrate * multiplier).toFixed(1)} g`,
-            `${t.fat}: ${(d.total_fat * multiplier).toFixed(1)} g`
-        ];
-        nutritionText.forEach(line => {
-            ctx.fillText(line, imgWidth + padding * 2, yOffset);
-            yOffset += lineHeight;
-        });
-        yOffset += 10;
-    });
-
-    // 繪製圓餅圖
-    const chartWidth = 300;
-    const chartHeight = 300;
-    ctx.drawImage(chartCanvas, imgWidth + padding * 2, totalHeight - chartHeight - padding, chartWidth, chartHeight);
-
-    // 下載圖片
-    const link = document.createElement("a");
-    link.download = `Food_Recognition_${new Date().toISOString().split('T')[0]}.png`;
-    link.href = elements.shareCanvas.toDataURL("image/png");
-    link.click();
-}
-
-elements.shareBtn.addEventListener("click", generateShareImage);
-
 </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9268eb4a6f57bfbd',t:'MTc0MzAxNTkyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9280fb3b0820c00c',t:'MTc0MzI2ODIzMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
