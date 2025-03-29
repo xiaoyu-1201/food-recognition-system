@@ -345,11 +345,11 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        /* 新增分享圖片樣式 */
         #shareCanvas {
             display: none;
         }
         .share-btn {
-            margin-top: 10px;
             background-color: #28a745;
             color: white;
         }
@@ -528,7 +528,7 @@ function updateUI() {
         const data = JSON.parse(elements.resultArea.dataset.detections);
         const detectionsHtml = data.detections.map((d, index) => renderDetection(d, portionValues[d.food_name] || 1, index)).join('');
         const toggleButtonHtml = isMobileView() ? `<button class="toggle-result-btn" onclick="toggleResultArea()">展開/收起</button>` : '';
-Tex        elements.resultArea.innerHTML = `
+        elements.resultArea.innerHTML = `
             ${toggleButtonHtml}
             <div class="nutrition-info">
                 ${renderNutritionSelector(data.detections)}
@@ -606,21 +606,30 @@ function previewFile() {
 
 function drawBoundingBoxes(detections, canvas, targetElement, sourceCanvas = null, offsetX = 0, offsetY = 0, targetWidth = null, targetHeight = null) {
     const ctx = canvas.getContext("2d");
-    const width = targetWidth || targetElement.offsetWidth;
-    const height = targetHeight || targetElement.offsetHeight;
-    const naturalWidth = sourceCanvas ? sourceCanvas.width : targetElement.naturalWidth || targetElement.videoWidth;
-    const naturalHeight = sourceCanvas ? sourceCanvas.height : targetElement.naturalHeight || targetElement.videoHeight;
-    const scaleX = width / naturalWidth;
-    const scaleY = height / naturalHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (targetWidth && targetHeight) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+    } else {
+        canvas.width = targetElement.offsetWidth;
+        canvas.height = targetElement.offsetHeight;
+    }
+
+    const naturalWidth = sourceCanvas ? sourceCanvas.width : targetElement.videoWidth || targetElement.naturalWidth;
+    const naturalHeight = sourceCanvas ? sourceCanvas.height : targetElement.videoHeight || targetElement.naturalHeight;
+    const scaleX = canvas.width / naturalWidth;
+    const scaleY = canvas.height / naturalHeight;
+
+    if (!detections || !Array.isArray(detections)) return;
 
     detections.forEach(d => {
         if (!d.boxes || d.boxes.length !== 4) return;
         const [x, y, x2, y2] = d.boxes;
-        const boxWidth = (x2 - x) * scaleX;
-        const boxHeight = (y2 - y) * scaleY;
+        const width = (x2 - x) * scaleX;
+        const height = (y2 - y) * scaleY;
         ctx.strokeStyle = "#00FF00";
         ctx.lineWidth = 2;
-        ctx.strokeRect(offsetX + x * scaleX, offsetY + y * scaleY, boxWidth, boxHeight);
+        ctx.strokeRect(offsetX + x * scaleX, offsetY + y * scaleY, width, height);
         const foodName = currentLang === "en" ? (d.label || d.food_name).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : (d.food_name || d.label);
         const confidence = (d.confidence * 100).toFixed(2);
         ctx.font = "16px Arial";
@@ -1123,6 +1132,7 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+// 新增生成分享圖片功能
 async function generateShareImage() {
     if (!elements.resultArea.dataset.detections) {
         alert(currentLang === "en" ? "No detection results to share!" : "沒有辨識結果可分享！");
@@ -1134,6 +1144,7 @@ async function generateShareImage() {
     const img = elements.previewImg;
     const chartCanvas = document.getElementById("nutritionChart");
 
+    // 設定畫布尺寸
     const padding = 40;
     const imgWidth = 600;
     const imgHeight = img.naturalHeight * (imgWidth / img.naturalWidth);
@@ -1144,18 +1155,22 @@ async function generateShareImage() {
     elements.shareCanvas.width = totalWidth;
     elements.shareCanvas.height = totalHeight;
 
+    // 繪製背景
     ctx.fillStyle = currentTheme === "dark" ? "#2c2c2e" : "#ffffff";
     ctx.fillRect(0, 0, totalWidth, totalHeight);
 
+    // 繪製標題
     ctx.fillStyle = currentTheme === "dark" ? "#f5f5f7" : "#1d1d1f";
     ctx.font = "bold 32px -apple-system, BlinkMacSystemFont, 'SF Pro', Arial, sans-serif";
     const titleText = translations[currentLang].shareTitle;
     const titleWidth = ctx.measureText(titleText).width;
     ctx.fillText(titleText, (totalWidth - titleWidth) / 2, padding + 20);
 
+    // 繪製圖片
     ctx.drawImage(img, padding, padding + 100, imgWidth, imgHeight);
     drawBoundingBoxes(data.detections, elements.shareCanvas, img, null, padding, padding + 100, imgWidth, imgHeight);
 
+    // 繪製營養資訊
     ctx.font = "16px -apple-system, BlinkMacSystemFont, 'SF Pro', Arial, sans-serif";
     let yOffset = padding + 100;
     const lineHeight = 30;
@@ -1184,10 +1199,12 @@ async function generateShareImage() {
         yOffset += 10;
     });
 
+    // 繪製圓餅圖
     const chartWidth = 300;
     const chartHeight = 300;
     ctx.drawImage(chartCanvas, imgWidth + padding * 2, totalHeight - chartHeight - padding, chartWidth, chartHeight);
 
+    // 下載圖片
     const link = document.createElement("a");
     link.download = `Food_Recognition_${new Date().toISOString().split('T')[0]}.png`;
     link.href = elements.shareCanvas.toDataURL("image/png");
@@ -1198,6 +1215,6 @@ elements.shareBtn.addEventListener("click", generateShareImage);
 
 </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9268eb4a6f57bfbd',t:'MTc0MzAxNTkyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9280ee762a5eade7',t:'MTc0MzI2NzcxMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9280fb3b0820c00c',t:'MTc0MzI2ODIzMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
