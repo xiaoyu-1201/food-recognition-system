@@ -996,7 +996,7 @@ async function startCamera() {
 async function startDetection() {
     if (isDetecting) return;
     isDetecting = true;
-    const DETECTION_INTERVAL = 2000;
+    const DETECTION_INTERVAL = 1000;
     let lastFrameDetections = null;
 
     function drawLiveOverlay() {
